@@ -80,11 +80,11 @@ r.mapcalc --overwrite "rule_blue_swir12_TOT = (rule_blue_max_swir12_3rd == 1) ||
 
 r.mask raster=rule_blue_swir12_TOT maskcats=1
 
-r.mapcalc --overwrite "diff_blu_green_3rd= ($fb2 - $fb1)"
+r.mapcalc --overwrite "diff_blu_green_3rd = ($fb2 - $fb1)"
 
 r.mapcalc --overwrite "shadow_def_3rd = (rule_blue_swir12_TOT == 1) && (diff_blu_green_3rd < 0.007)"
 
-r.null map=shadow_def setnull=0 --overwrite
+r.null map=shadow_def_3rd setnull=0 --overwrite
 
 r.to.vect -s input=shadow_def_3rd output=shadow_def_3rd_v type=area --overwrite
 
