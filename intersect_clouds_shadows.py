@@ -32,8 +32,6 @@ def main ():
 
 	gscript.run_command('v.db.addtable', map='shadow_def_3rd', columns='value')
 
-	#gscript.run_command('v.to.rast', input='shadow_def_3rd', output='shadow_def_3rd_r', use='cat', overwrite=True, quiet=True)
-
 	### end shadow mask preparation ### 
 
 	### start cloud mask preparation ###
@@ -102,7 +100,7 @@ def main ():
 
 	gscript.run_command('v.transform', input='cloud_def_v_clean', output='cloud_def_v_clean_shift', xshift=dE[index_maxAA], yshift=dN[index_maxAA], overwrite=True, quiet=True)
 		
-	gscript.run_command('v.overlay', ainput='shadow_def_3rd', binput='cloud_def_v_clean_shift', operator='and', output='intersect_cloud_shadow', overwrite=True, quiet=True)
+	gscript.run_command('v.select', ainput='shadow_def_3rd', atype='point,line,boundary,centroid,area', binput='cloud_def_v_clean_shift', btype='point,line,boundary,centroid,area', output='shadow_mask', operator='intersects')
 
 	gscript.message('--- the estimated clouds height is: %d m ---'% HH[index_maxAA])
 
