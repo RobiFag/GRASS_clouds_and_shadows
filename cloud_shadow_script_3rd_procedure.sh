@@ -80,11 +80,11 @@ r.mapcalc --overwrite "rule_blue_swir12_TOT = (rule_blue_max_swir12_3rd == 1) ||
 
 r.mask raster=rule_blue_swir12_TOT maskcats=1
 
-r.mapcalc --overwrite "diff_blu_green_3rd = ($fb2 - $fb1)"
+r.mapcalc --overwrite "diff_blu_green_3rd= ($fb2 - $fb1)"
 
 r.mapcalc --overwrite "shadow_def_3rd = (rule_blue_swir12_TOT == 1) && (diff_blu_green_3rd < 0.007)"
 
-r.null map=shadow_def_3rd setnull=0 --overwrite
+r.null map=shadow_def setnull=0 --overwrite
 
 r.to.vect -s input=shadow_def_3rd output=shadow_def_3rd_v type=area --overwrite
 
@@ -98,5 +98,36 @@ r.mask -r
 # END Procedure - the final outputs are two vector "masks", one for clouds and one for shadows
 ##############################################################################################
 
+########################################################################################################################################
+# START shadows cleaning Procedure (remove shadows misclassification). This part will be replaced by intersect_clouds_shadows.py script
+########################################################################################################################################
 
-                     
+### start shadow mask preparation ###
+
+v.centroids --overwrite input=shadow_def_3rd_v_clean output=shadow_def_3rd_v_clean_cen ### fill holes ###
+v.db.droptable -f map=shadow_def_3rd_v_clean_cen ### remove table ###
+v.db.addtable map=shadow_def_3rd_v_clean_cen columns=value ### add a new table with cat and value columns ###
+v.db.update map=shadow_def_3rd_v_clean_cen layer=1 column=value value=1 ### update column value with val=1 ###
+v.dissolve --overwrite input=shadow_def_3rd_v_clean_cen column=value output=shadow_def_3rd_v_clean_cen_dis ### dissolve polygon using column val (it creates a multypart layer) ###
+v.category --overwrite input=shadow_def_3rd_v_clean_cen_dis type=point,line,boundary,centroid,area,face,kernel output=shadow_def_3rd_v_clean_cen_dis_delcat option=del cat=-1 ### remove all categories  ###
+v.category --overwrite input=shadow_def_3rd_v_clean_cen_dis_delcat type=centroid,area output=shadow_def_3rd option=add ### add new categories so as to split polygons in a singlepart layer ###
+v.db.droptable -f map=shadow_def_3rd ### remove table ###
+v.db.addtable map=shadow_def_3rd ### create a new one ###
+
+### end shadow mask preparation ### 
+
+### start cloud mask preparation ###
+
+v.db.droptable -f map=cloud_def_v_clean
+v.db.addtable map=cloud_def_v_clean
+
+### end cloud mask preparation ###   
+
+### shift cloud mask using dE e dN which have to be manually computed at the moment ###
+
+v.transform input=cloud_def_v_clean output=cloud_def_v_clean_shift xshift=-615 yshift=2386.2
+
+### intersect shifted clouds and shadows in order to obtain clean shadows without misclassifications ###
+
+v.select ainput=shadow_def_3rd atype=point,line,boundary,centroid,area binput=cloud_def_v_clean_shift btype=point,line,boundary,centroid,area output=intersect_cloud_shadow operator=intersects
+            
