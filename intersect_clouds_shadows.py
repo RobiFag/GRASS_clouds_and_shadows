@@ -3,6 +3,7 @@
 
 import grass.script as gscript
 import math,os,sys,shutil,re,glob,numpy
+import xml.etree.ElementTree as et
 
 def main ():
 	
@@ -42,10 +43,41 @@ def main ():
 
 	### end cloud mask preparation ###   
 
-	### shift cloud mask using dE e dN which have to be manually computed at the moment ###
+	### shift cloud mask using dE e dN ###
 
-	z = 50.83 #zenith
-	a = 165.51 #azimuth
+	# start reading mean sun zenith and azimuth from xml file to compute dE and dN automatically #
+
+	#z = 50.83 #zenith
+	#a = 165.51 #azimuth
+
+	xml_tree = et.parse('/home/roberta/remote/Progetti_convegni/ricerca/2015_2018_PhD_roberta/sentinel2/MTD_TL.xml')
+	root = xml_tree.getroot()
+
+	ZA = []
+
+	for elem in root[1]:  
+		for subelem in elem[1]:
+			ZA.append (subelem.text)
+
+	#print ZA
+
+	Ze = float(ZA[0])
+	Az = float(ZA[1])
+
+	z = round(Ze, 3)
+	a = round(Az, 3)
+
+	gscript.message('--- the mean sun Zenith is: %.3f deg ---'% z)
+
+	gscript.message('--- the mean sun Azimuth is: %.3f deg ---'% a)
+
+	#print Ze
+	#print Az
+	#print z
+	#print a
+
+	# stop reading mean sun zenith and azimuth from xml file to compute dE and dN automatically #
+
 	H = 1000
 	dH = 100
 	HH = []
@@ -100,7 +132,7 @@ def main ():
 
 	gscript.run_command('v.transform', input='cloud_def_v_clean', output='cloud_def_v_clean_shift', xshift=dE[index_maxAA], yshift=dN[index_maxAA], overwrite=True, quiet=True)
 		
-	gscript.run_command('v.select', ainput='shadow_def_3rd', atype='point,line,boundary,centroid,area', binput='cloud_def_v_clean_shift', btype='point,line,boundary,centroid,area', output='shadow_mask', operator='intersects')
+	gscript.run_command('v.select', ainput='shadow_def_3rd', atype='point,line,boundary,centroid,area', binput='cloud_def_v_clean_shift', btype='point,line,boundary,centroid,area', output='shadow_mask', operator='intersects', overwrite=True, quiet=True)
 
 	gscript.message('--- the estimated clouds height is: %d m ---'% HH[index_maxAA])
 
