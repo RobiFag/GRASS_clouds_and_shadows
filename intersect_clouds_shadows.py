@@ -45,6 +45,7 @@ def main ():
 
 	### shift cloud mask using dE e dN ###
 
+
 	# start reading mean sun zenith and azimuth from xml file to compute dE and dN automatically #
 
 	#z = 50.83 #zenith
@@ -77,6 +78,7 @@ def main ():
 	#print a
 
 	# stop reading mean sun zenith and azimuth from xml file to compute dE and dN automatically #
+
 
 	H = 1000
 	dH = 100
