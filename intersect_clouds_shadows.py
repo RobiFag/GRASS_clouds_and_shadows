@@ -61,11 +61,11 @@ def main ():
 
 	#print ZA
 
-	Ze = float(ZA[0])
-	Az = float(ZA[1])
+	z = float(ZA[0])
+	a = float(ZA[1])
 
-	z = round(Ze, 3)
-	a = round(Az, 3)
+	#zz = round(Ze, 3)
+	#aa = round(Az, 3)
 
 	gscript.message('--- the mean sun Zenith is: %.3f deg ---'% z)
 
