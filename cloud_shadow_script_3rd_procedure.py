@@ -33,8 +33,8 @@ def main ():
 		gscript.mapcalc('{r} = 1.0 * ({a})/1000'.format(r="%s_%s" % (b, f), a=b), overwrite=True)
 		f_bands.append ("%s_%s" % (b, f))
 
-	gscript.message('--- tutte le bande sono state rese float e scalate! ---')
-	print f_bands
+	gscript.message('--- All bands are converted to float and the quantification value has been applied ---')
+	#print f_bands
 
 	gscript.mapcalc('{r} = 1'.format(r='base_M'), overwrite=True)
 	
@@ -42,29 +42,51 @@ def main ():
 		gscript.run_command('r.stats.zonal', base='base_M', cover=fb, method='max', output="%s_%s" % (fb, m), overwrite=True)
 		stats.append ("%s_%s" % (fb, m))
 
-	gscript.message('--- tutte le statistiche sono state calcolate! ---')
-	print stats
+	gscript.message('--- Statistics have been computed! ---')
+	#print stats
+
 
 	#### start of Clouds detection  (some rules from litterature)###
-	gscript.mapcalc('{r1} = ({a} > (0.08*{ma})) && ({b} > (0.08*{mb})) && ({c} > (0.08*{mc}))'.format(r1='first_rule_script', a=f_bands[0], ma=stats[0], b=f_bands[1], mb=stats[1], c=f_bands[2], mc=stats[2]), overwrite=True)
-	
-	gscript.mapcalc('{r2} = ({c} < ((0.08*{mc})*1.5)) && ({c} > {g}*1.3)'.format(r2='second_rule_script', c=f_bands[2], mc=stats[2], g=f_bands[6]), overwrite=True)
-	
-	gscript.mapcalc('{r3} = ({f} < (0.1*{mf})) && ({g} < (0.1*{mg}))'.format(r3='third_rule_script', f=f_bands[5], mf=stats[5], g=f_bands[6], mg=stats[6]), overwrite=True)
-	
-	gscript.mapcalc('{r4} = if({e} == max({e}, 2 * {a},  2 * {b},  2 * {c}))'.format(r4='fourth_rule_script', e=f_bands[4], a=f_bands[0], b=f_bands[1], c=f_bands[2]), overwrite=True)
-	
-	gscript.mapcalc('{r5} = {a} > 0.2'.format(r5='fifth_rule_script', a=f_bands[0]), overwrite=True)
 
-	gscript.mapcalc('{rf} = ({r1} == 1) && ({r2} == 0) && ({r3} == 0) && ({r4} == 0) && ({r5} == 1)'.format(rf='cloud_def_script', r1='first_rule_script', r2='second_rule_script', r3='third_rule_script', r4='fourth_rule_script', r5='fifth_rule_script'), overwrite=True)
+	first_rule = '((%s > (0.08*%s)) && (%s > (0.08*%s)) && (%s > (0.08*%s)))' % (f_bands[0], stats[0], f_bands[1], stats[1], f_bands[2], stats[2])
+	second_rule = '((%s < ((0.08*%s)*1.5)) && (%s > %s*1.3))' % (f_bands[2], stats[2], f_bands[2], f_bands[6])
+	third_rule = '((%s < (0.1*%s)) && (%s < (0.1*%s)))' % (f_bands[5], stats[5], f_bands[6], stats[6])
+	fourth_rule = '(if(%s == max(%s, 2 * %s,  2 * %s,  2 * %s)))' % (f_bands[4], f_bands[4], f_bands[0], f_bands[1], f_bands[2])
+	fifth_rule = '(%s > 0.2)' % (f_bands[0])
+	cloud_rules = '(%s == 1) && (%s == 0) && (%s == 0) && (%s == 0) && (%s == 1)' % (first_rule, second_rule, third_rule, fourth_rule, fifth_rule)
 
-	gscript.run_command('r.null', map='cloud_def_script', setnull=0, overwrite=True)
+	expr = 'cloud_def = if( %s, 0, null( ) )' % (cloud_rules)
+	
+	gscript.mapcalc( expr,  overwrite=True)
+	#print expr
 
 	gscript.run_command('r.to.vect', input='cloud_def_script', output='cloud_def_script_v', type='area', flags='s', overwrite=True)
 
 	gscript.run_command('v.clean', input='cloud_def_script_v', output='cloud_clean', tool='rmarea', threshold=50000, overwrite=True)
 
 	### end of Clouds detection ####
+
+
+	### start of shadows detection ###
+	gscript.mapcalc('{r6} = ({a} > {g}) && ({a} < {d}) && ({a} < 0.1) && ({g} < 0.1)'.format(r6='sixth_rule_script', a=f_bands[0], b=f_bands[1], d=f_bands[3], g=f_bands[6]), overwrite=True)
+
+	gscript.mapcalc('{r7} = ({a} < {g}) && ({a} < {d}) && ({a} < 0.1) && ({g} < 0.1) && ({d} < 0.1)'.format(r7='seventh_rule_script', a=f_bands[0], b=f_bands[1], d=f_bands[3], g=f_bands[6]), overwrite=True)
+
+	gscript.mapcalc('{rs} = ({r6} == 1) || ({r7} == 1)'.format(rs='shadow_script', r6='sixth_rule_script', r7='seventh_rule_script'), overwrite=True)
+
+	gscript.run_command('r.mask', raster='shadow_script', maskcats=1)
+	
+	gscript.mapcalc('{rd} = ({b} - {a})'.format(rd='diff_green_blue', b=f_bands[1], a=f_bands[0]), overwrite=True)
+
+	gscript.mapcalc('{S} = ({rs} == 1) && ({rd} < 0.007)'.format(S='shadow_def_script', rs='shadow_script', rd='diff_green_blue'), overwrite=True)
+
+	gscript.run_command('r.null', map='shadow_def_script', setnull=0, overwrite=True)
+
+	gscript.run_command('r.to.vect', input='shadow_def_script', output='shadow_def_script_v', type='area', flags='s', overwrite=True)
+
+	gscript.run_command('v.clean', input='shadow_def_script_v', output='shadow_clean', tool='rmarea', threshold=50000, overwrite=True)
+
+	### end of shadows detection ###
 
 
 if __name__ == "__main__": 
