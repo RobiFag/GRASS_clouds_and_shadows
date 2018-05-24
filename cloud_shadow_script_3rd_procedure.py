@@ -74,13 +74,13 @@ def main ():
 	seventh_rule = '(%s - %s)' % (f_bands[1], f_bands[0])
 	shadow_rules = '((%s == 1) && (%s < 0.007))' % (sixth_rule, seventh_rule)
 	
-	expr_s = 'shadow_def = if( %s, 0, null( ) )' % (shadow_rules)
+	expr_s = 'shadow_temp = if( %s, 0, null( ) )' % (shadow_rules)
 	
 	gscript.mapcalc( expr_s,  overwrite=True)
 
-	gscript.run_command('r.to.vect', input='shadow_def', output='shadow_def_v', type='area', flags='s', overwrite=True)
+	gscript.run_command('r.to.vect', input='shadow_temp', output='shadow_temp_v', type='area', flags='s', overwrite=True)
 
-	gscript.run_command('v.clean', input='shadow_def_v', output='shadow_mask', tool='rmarea', threshold=10000, overwrite=True)
+	gscript.run_command('v.clean', input='shadow_temp_v', output='shadow_temp_mask', tool='rmarea', threshold=10000, overwrite=True)
 
 	### end of shadows detection ###
 

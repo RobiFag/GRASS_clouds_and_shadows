@@ -2,10 +2,35 @@
 # coding=utf-8
 
 import grass.script as gscript
-import math,os,sys,shutil,re,glob,numpy
+import math,os,sys,shutil,re,glob,numpy,time,atexit
 import xml.etree.ElementTree as et
 
 def main ():
+
+	#temporary map names
+    	global tmp, t
+    	tmp = {}
+    	t = True
+
+	#input file
+	mtd_file = '/home/roberta/remote/Progetti_convegni/ricerca/2015_2018_PhD_roberta/sentinel2/MTD_TL.xml' ####change MTD_TL file path!!!####
+	
+	mapset = gscript.gisenv()['MAPSET']	
+
+	# prepare temporary map raster names
+    	processid = "%.7f" % time.time()
+	processid = processid.replace(".", "_")
+	tmp["centroid"] = "centroid_" + processid
+	tmp["dissolve"] = "dissolve_" + processid
+	tmp["delcat"] = "delcat_" + processid
+	tmp["addcat"] = "addcat_" + processid
+	tmp["cl_shift"] = "cl_shift_" + processid
+	tmp["overlay"] = "overlay_" + processid
+
+	#check temporary map names are not existing maps
+	for key, value in tmp.items():
+		if gscript.find_file(value, element = 'vector', mapset = mapset)['file']:
+			gscript.fatal(_("Temporary vector map <%s> already exists.") % value)
 	
 	#####################################################################
 	# START shadows cleaning Procedure (remove shadows misclassification)
@@ -15,43 +40,43 @@ def main ():
 
 	gscript.message('--- start working! ---')
 	
-	gscript.run_command('v.centroids', input='shadow_def_3rd_v_clean', output='shadow_def_3rd_v_clean_cen', overwrite=True, quiet=True)
+	gscript.run_command('v.centroids', input='shadow_temp_mask', output=tmp["centroid"], overwrite=True, quiet=True)
 
-	gscript.run_command('v.db.droptable', map='shadow_def_3rd_v_clean_cen', flags='f')
+	gscript.run_command('v.db.droptable', map=tmp["centroid"], flags='f')
 
-	gscript.run_command('v.db.addtable', map='shadow_def_3rd_v_clean_cen', columns='value')
+	gscript.run_command('v.db.addtable', map=tmp["centroid"], columns='value')
 
-	gscript.run_command('v.db.update', map='shadow_def_3rd_v_clean_cen', layer=1, column='value', value=1)
+	gscript.run_command('v.db.update', map=tmp["centroid"], layer=1, column='value', value=1)
 	
-	gscript.run_command('v.dissolve', input='shadow_def_3rd_v_clean_cen', column='value', output='shadow_def_3rd_v_clean_cen_dis', overwrite=True, quiet=True)
+	gscript.run_command('v.dissolve', input=tmp["centroid"], column='value', output=tmp["dissolve"], overwrite=True, quiet=True)
 
-	gscript.run_command('v.category', input='shadow_def_3rd_v_clean_cen_dis', type='point,line,boundary,centroid,area,face,kernel', output='shadow_def_3rd_v_clean_cen_dis_delcat', option='del', cat=-1, overwrite=True, quiet=True)
+	gscript.run_command('v.category', input=tmp["dissolve"], type='point,line,boundary,centroid,area,face,kernel', output=tmp["delcat"], option='del', cat=-1, overwrite=True, quiet=True)
 	
-	gscript.run_command('v.category', input='shadow_def_3rd_v_clean_cen_dis_delcat', type='centroid,area', output='shadow_def_3rd', option='add', overwrite=True, quiet=True)
+	gscript.run_command('v.category', input=tmp["delcat"], type='centroid,area', output=tmp["addcat"], option='add', overwrite=True, quiet=True)
 
-	gscript.run_command('v.db.droptable', map='shadow_def_3rd', flags='f')
+	gscript.run_command('v.db.droptable', map=tmp["addcat"], flags='f')
 
-	gscript.run_command('v.db.addtable', map='shadow_def_3rd', columns='value')
+	gscript.run_command('v.db.addtable', map=tmp["addcat"], columns='value')
 
 	### end shadow mask preparation ### 
 
 	### start cloud mask preparation ###
 
-	gscript.run_command('v.db.droptable', map='cloud_def_v_clean', flags='f')
+	gscript.run_command('v.db.droptable', map='cloud_mask', flags='f')
 
-	gscript.run_command('v.db.addtable', map='cloud_def_v_clean', columns='value')
+	gscript.run_command('v.db.addtable', map='cloud_mask', columns='value')
 
 	### end cloud mask preparation ###   
 
-	### shift cloud mask using dE e dN ###
 
+	### shift cloud mask using dE e dN ###
 
 	# start reading mean sun zenith and azimuth from xml file to compute dE and dN automatically #
 
 	#z = 50.83 #zenith
 	#a = 165.51 #azimuth
 
-	xml_tree = et.parse('/home/roberta/remote/Progetti_convegni/ricerca/2015_2018_PhD_roberta/sentinel2/MTD_TL.xml')
+	xml_tree = et.parse(mtd_file)
 	root = xml_tree.getroot()
 
 	ZA = []
@@ -78,7 +103,6 @@ def main ():
 	#print a
 
 	# stop reading mean sun zenith and azimuth from xml file to compute dE and dN automatically #
-
 
 	H = 1000
 	dH = 100
@@ -113,13 +137,15 @@ def main ():
 	
 		H = H + dH
 
-		gscript.run_command('v.transform', input='cloud_def_v_clean', output='cloud_def_v_clean_shift', xshift=E_shift, yshift=N_shift, overwrite=True, quiet=True)
+		gscript.run_command('v.transform', input='cloud_mask', output=tmp["cl_shift"], xshift=E_shift, yshift=N_shift, overwrite=True, quiet=True)
 		
-		gscript.run_command('v.overlay', ainput='shadow_def_3rd', binput='cloud_def_v_clean_shift', operator='and', output='intersect_cloud_shadow', overwrite=True, quiet=True)
+		gscript.run_command('v.overlay', ainput=tmp["addcat"], binput=tmp["cl_shift"], operator='and', output=tmp["overlay"], overwrite=True, quiet=True)
 
-		gscript.run_command('v.db.addcolumn', map='intersect_cloud_shadow', columns='area double')
+		gscript.run_command('v.db.addcolumn', map=tmp["overlay"], columns='area double')
+		#print tmp["overlay"]
 
-		area = gscript.read_command('v.to.db', map='intersect_cloud_shadow', option='area', columns='area', flags='c')
+		area = gscript.read_command('v.to.db', map=tmp["overlay"], option='area', columns='area', flags='c')
+		#print area
 
 		area2 = gscript.parse_key_val(area, sep='|')
 
@@ -132,16 +158,20 @@ def main ():
 
 	index_maxAA = numpy.argmax(AA)
 
-	gscript.run_command('v.transform', input='cloud_def_v_clean', output='cloud_def_v_clean_shift', xshift=dE[index_maxAA], yshift=dN[index_maxAA], overwrite=True, quiet=True)
+	gscript.run_command('v.transform', input='cloud_mask', output=tmp["cl_shift"], xshift=dE[index_maxAA], yshift=dN[index_maxAA], overwrite=True, quiet=True)
 		
-	gscript.run_command('v.select', ainput='shadow_def_3rd', atype='point,line,boundary,centroid,area', binput='cloud_def_v_clean_shift', btype='point,line,boundary,centroid,area', output='shadow_mask', operator='intersects', overwrite=True, quiet=True)
+	gscript.run_command('v.select', ainput=tmp["addcat"], atype='point,line,boundary,centroid,area', binput=tmp["cl_shift"], btype='point,line,boundary,centroid,area', output='shadow_mask', operator='intersects', overwrite=True, quiet=True)
 
 	gscript.message('--- the estimated clouds height is: %d m ---'% HH[index_maxAA])
 
 	gscript.message('--- the estimated east shift is: %.2f m ---'% dE[index_maxAA])
 
 	gscript.message('--- the estimated north shift is: %.2f m ---'% dN[index_maxAA])
+    
+def cleanup():
+        gscript.run_command("g.remove", flags="f", type='vector', name=",".join([tmp[m] for m in tmp.keys()]), quiet=True)
 
 
-if __name__ == "__main__": 
-    main()
+if __name__ == "__main__":
+    	atexit.register(cleanup) 
+    	main()
