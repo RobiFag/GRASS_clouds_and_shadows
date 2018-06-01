@@ -3,7 +3,7 @@
 #
 ############################################################################
 #
-# MODULE:	i.sentinel.cloud
+# MODULE:	i.sentinel.mask
 # AUTHOR(S):	Roberta Fagandini, Moritz Lennert, Roberto Marzocchi
 # PURPOSE:	Creates clouds and shadows masks for Sentinel-2 images
 #
@@ -26,7 +26,7 @@
 #% description: input bands
 #% required : yes
 #% multiple: no
-#% guisection: Input
+#% guisection: Required
 #%end
 #%option
 #% key: green
@@ -35,7 +35,7 @@
 #% description: input bands
 #% required : yes
 #% multiple: no
-#% guisection: Input
+#% guisection: Required
 #%end
 #%option
 #% key: red
@@ -44,7 +44,7 @@
 #% description: input bands
 #% required : yes
 #% multiple: no
-#% guisection: Input
+#% guisection: Required
 #%end
 #%option
 #% key: nir
@@ -53,7 +53,7 @@
 #% description: input bands
 #% required : yes
 #% multiple: no
-#% guisection: Input
+#% guisection: Required
 #%end
 #%option
 #% key: nir8a
@@ -62,7 +62,7 @@
 #% description: input bands
 #% required : yes
 #% multiple: no
-#% guisection: Input
+#% guisection: Required
 #%end
 #%option
 #% key: swir11
@@ -71,7 +71,7 @@
 #% description: input bands
 #% required : yes
 #% multiple: no
-#% guisection: Input
+#% guisection: Required
 #%end
 #%option
 #% key: swir12
@@ -80,7 +80,7 @@
 #% description: input bands
 #% required : yes
 #% multiple: no
-#% guisection: Input
+#% guisection: Required
 #%end
 #%option
 #% key: mtd_file
@@ -91,9 +91,26 @@
 #% multiple: yes
 #% guisection: Metadata
 #%end
+#%option
+#% key: scale_fac
+#% type: integer
+#% description: rescale factor
+#% required : no
+#% answer: 10000
+#% guisection: Rescale
+#%end
 #%flag
 #% key: r
 #% description: set computational region to image max extent
+#%end
+#%flag
+#% key: t
+#% description: do not delete temporary files
+#%end
+#%flag
+#% key: s
+#% description: Rescale input bands
+#% guisection: Rescale
 #%end
 
 import grass.script as gscript
@@ -110,9 +127,9 @@ def main ():
 	#############################################
 
 	#temporary map names
-    	global tmp, t
+    	global tmp, t, mapset
     	tmp = {}
-    	t = True
+
 
 	mapset = gscript.gisenv()['MAPSET']
 	mapset2 = '@%s' % mapset
@@ -120,7 +137,6 @@ def main ():
 	# prepare temporary map raster names
     	processid = "%.2f" % time.time()
 	processid = processid.replace(".", "_")
-	#tmp["base_M"] = "base_M_" + processid
 	tmp["cloud_v"] = "cloud_v_" + processid
 	tmp["shadow_temp_v"] = "shadow_temp_v_" + processid
 	tmp["shadow_temp_mask"] = "shadow_temp_mask_" + processid
@@ -143,6 +159,7 @@ def main ():
 	#mtd_file = '/home/roberta/remote/Progetti_convegni/ricerca/2015_2018_PhD_roberta/sentinel2/MTD_TL.xml' ####change MTD_TL file path!!!####
 	mtd_file = options['mtd_file']	 
 	b1 = options['blu']
+	#b1 = gscript.find_file(b1, element = 'cell', mapset = mapset)['name']
 	#b1 = b1.replace(mapset2, "")
 	b2 = options['green']
 	#b2 = b2.replace(mapset2, "")
@@ -159,45 +176,43 @@ def main ():
 	f = 'float'
 	bands = [b1, b2, b3, b4, b5, b7, b8]
 	f_bands = []
-	#stats = []
-	#m = 'max'
 	cloud_def = 'cloud_def'
 	shadow_temp = 'shadow_temp'
-	scale_fac = 1000
+	scale_fac = options['scale_fac']
 	cloud_clean_T = 50000
 	shadow_clean_T = 10000
 	raster_max = []
 	cloud_mask = 'cloud_mask'
 	shadow_mask = 'shadow_mask'
 
-	gscript.message(mapset)
 
 	if flags["r"]:
-		region = gscript.run_command('g.region', rast=b1, flags='pa')
+		region = gscript.run_command('g.region', rast=bands, flags='a')
+		gscript.message("--- The computational region has been set to image max extent ---")
 	else:		
-		gscript.message('--- pippo ---')
+		gscript.warning("All subsequent operations will be limited to the current computational region") 
 
-	for b in bands:
-		gscript.mapcalc('{r} = 1.0 * ({a})/{c}'.format(r=("%s_%s" % (b, f)).replace(mapset2, ""), a=b, c=scale_fac), overwrite=True)
-		f_bands.append (("%s_%s" % (b, f)).replace(mapset2, ""))
-
-	gscript.message('--- All bands are converted to float and the quantification value has been applied ---')
-	gscript.message(bands)
-	gscript.message(f_bands)
-	#print f_bands
-
-	#gscript.mapcalc('{r} = 1'.format(r=tmp["base_M"]), overwrite=True)
+	if flags["s"]:
+		for b in bands:
+			#gscript.mapcalc('{r} = 1.0 * ({a})/{c}'.format(r=("%s_%s" % (b, f)).replace(mapset2, ""), a=b, c=scale_fac), overwrite=True)
+			b = gscript.find_file(b, element = 'cell')['name']
+			#gscript.message(b)
+			gscript.mapcalc('{r} = 1.0 * ({a})/{c}'.format(r=("%s_%s" % (b, f)), a=b, c=scale_fac), overwrite=True)
+			f_bands.append ("%s_%s" % (b, f))
+			#gscript.message(f_bands)
+			#f_bands.append (("%s_%s" % (b, f)).replace(mapset2, ""))
+		gscript.message('--- All bands have been rescaled ---')
+	else:		
+		gscript.warning('Any rescale factor has been applied')
+		for b in bands:
+			if gscript.raster_info(b)['datatype'] != "FCELL":
+		    		gscript.fatal("Raster maps must be float") 
 	
 	for fb in f_bands:
-		#tmp["temp_stats"] = "%s_%s_%s" % (fb, m, processid)
 		stats = gscript.parse_command('r.univar', flags='g', map=fb)
 		raster_max.append (float(stats['max']))
 	#print stats
-	gscript.message(raster_max)
-	#print raster_max
-		#gscript.run_command('r.stats.zonal', base=tmp["base_M"], cover=fb, method='max', output=tmp["temp_stats"], overwrite=True)
-		#stats.append (tmp["temp_stats"])
-
+	#gscript.message(raster_max)
 	gscript.message('--- Statistics have been computed! ---')
 	#print stats
 
@@ -220,24 +235,10 @@ def main ():
 	gscript.run_command('v.clean', input=tmp["cloud_v"], output=cloud_mask, tool='rmarea', threshold=cloud_clean_T, overwrite=True)
 
 	### end of Clouds detection ####
-	
-	#gscript.run_command('r.mask', vector=cloud_mask, flags='i')
 
 	### start of shadows detection ###
 
-	#gscript.mapcalc('{r} = (({a} > {g}) && ({a} < {d}) && ({a} < 0.1) && ({g} < 0.1)) || (({a} < {g}) && ({a} < {d}) && ({a} < 0.1) && ({g} < 0.1) && ({d} < 0.1))'.format(r='sixth_rule', a=f_bands[0], b=f_bands[1], d=f_bands[3], g=f_bands[6]), overwrite=True)
-
-	#pippo.append(sixth_rule_script)
-
-	#sixth_rule = 'sixth_rule = (((%s > %s) && (%s < %s) && (%s < 0.1) && (%s < 0.1)) || ((%s < %s) && (%s < %s) && (%s < 0.1) && (%s < 0.1) && (%s < 0.1)))' % (f_bands[0], f_bands[6], f_bands[0], f_bands[3], f_bands[0], f_bands[6], f_bands[0], f_bands[6], f_bands[0], f_bands[3], f_bands[0], f_bands[6], f_bands[3])
-
 	sixth_rule = '(((%s > %s) && (%s < %s) && (%s < 0.1) && (%s < 0.1)) || ((%s < %s) && (%s < %s) && (%s < 0.1) && (%s < 0.1) && (%s < 0.1)))' % (f_bands[0], f_bands[6], f_bands[0], f_bands[3], f_bands[0], f_bands[6], f_bands[0], f_bands[6], f_bands[0], f_bands[3], f_bands[0], f_bands[6], f_bands[3])
-	
-	#gscript.mapcalc( sixth_rule,  overwrite=True)
-
-	#gscript.run_command('r.mask', raster='%s' % (sixth_rule), maskcats=1)
-
-	#gscript.run_command('r.mask', raster='sixth_rule', maskcats=1)
 
 	seventh_rule = '(%s - %s)' % (f_bands[1], f_bands[0])
 	shadow_rules = '((%s == 1) && (%s < 0.007))' % (sixth_rule, seventh_rule)
@@ -250,13 +251,7 @@ def main ():
 
 	gscript.run_command('v.clean', input=tmp["shadow_temp_v"], output=tmp["shadow_temp_mask"], tool='rmarea', threshold=shadow_clean_T, overwrite=True)
 
-	#gscript.run_command('r.mask', flags='r')
-	
-	#gscript.run_command('g.remove', type='raster', name='sixth_rule', flags='f')
-
 	### end of shadows detection ###
-
-	#gscript.run_command('r.mask', flags='r')
 
 	#####################################################################
 	# START shadows cleaning Procedure (remove shadows misclassification)
@@ -264,7 +259,7 @@ def main ():
 
 	### start shadow mask preparation ###
 
-	gscript.message('--- start working! ---')
+	gscript.message('--- start cleaning the shadow mask ---')
 	
 	gscript.run_command('v.centroids', input=tmp["shadow_temp_mask"], output=tmp["centroid"], overwrite=True, quiet=True)
 
@@ -393,17 +388,16 @@ def main ():
 
 	gscript.message('--- the estimated north shift is: %.2f m ---'% dN[index_maxAA])
 
-    	#if not flags["t"]:
-        	#gscript.run_command("g.remove", type='vector', name=",".join([tmp[m] for m in tmp.keys()]), quiet=True)
-    	#t = False
-  
-
 def cleanup():
-    #if t:
-        gscript.run_command("g.remove", flags="f", type='raster,vector', name=",".join([tmp[m] for m in tmp.keys()]), quiet=True)
-        #gscript.run_command("g.remove", flags="f", type='raster', name=stats, quiet=True)
-
-
+    	if flags["t"]:
+		gscript.message('--- No temporary files have been deleted ---')
+	else:
+		for key, value in tmp.items():
+			if gscript.find_file(value, element = 'vector', mapset = mapset)['file']:
+				gscript.run_command("g.remove", flags="f", type='vector', name=",".join([tmp[m] for m in tmp.keys()]), quiet=True)
+			if gscript.find_file(value, element = 'cell', mapset = mapset)['file']:
+				gscript.run_command("g.remove", flags="f", type='raster', name=",".join([tmp[m] for m in tmp.keys()]), quiet=True)
+        	
 if __name__ == "__main__":
 	options, flags = gscript.parser() 
 	atexit.register(cleanup)
