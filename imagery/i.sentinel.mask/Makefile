@@ -1,6 +1,6 @@
 MODULE_TOPDIR = ../..
 
-PGM = d.shadedmap
+PGM = i.sentinel.mask
 
 include $(MODULE_TOPDIR)/include/Make/Script.make
 
