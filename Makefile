@@ -1,8 +1,7 @@
 MODULE_TOPDIR = ../..
 
-SUBDIRS = \
-	i.sentinel.mask
+PGM = i.sentinel.mask
 
-include $(MODULE_TOPDIR)/include/Make/Dir.make
+include $(MODULE_TOPDIR)/include/Make/Script.make
 
-default: parsubdirs
+default: script
