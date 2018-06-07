@@ -17,7 +17,7 @@
 
 #%Module
 #% description: Creates clouds and shadows masks for Sentinel-2 images
-#% keywords: imagery, sentinel, cloud, shadow, reflectance
+#% keywords: imagery, sentinel, cloud detection, shadow, reflectance
 #%End
 #%option
 #% key: blue
@@ -102,9 +102,9 @@
 #% key: mtd_file
 #% type: string
 #% gisprompt: old,file,file
-#% description: input bands
-#% required : yes
-#% multiple: yes
+#% description: name of the image metadata file (MTD_TL.xml)
+#% required : no
+#% multiple: no
 #% guisection: Metadata
 #%end
 #%option
