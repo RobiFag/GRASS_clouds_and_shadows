@@ -17,7 +17,11 @@
 
 #%Module
 #% description: Creates clouds and shadows masks for Sentinel-2 images
-#% keywords: imagery, sentinel, cloud detection, shadow, reflectance
+#% keywords: imagery
+#% keywords: sentinel 
+#% keywords: cloud detection
+#% keywords: shadow
+#% keywords: reflectance
 #%End
 #%option
 #% key: blue
