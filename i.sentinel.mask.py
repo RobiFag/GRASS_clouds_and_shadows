@@ -24,11 +24,20 @@
 #% keywords: reflectance
 #%End
 #%option
+#% key: input_file
+#% type: string
+#% gisprompt: old,file,file
+#% description: name of the .txt file with listed input bands
+#% required : no
+#% multiple: no
+#% guisection: Required
+#%end
+#%option
 #% key: blue
 #% type: string
 #% gisprompt: old,cell,raster
 #% description: input bands
-#% required : yes
+#% required : no
 #% multiple: no
 #% guisection: Required
 #%end
@@ -37,7 +46,7 @@
 #% type: string
 #% gisprompt: old,cell,raster
 #% description: input bands
-#% required : yes
+#% required : no
 #% multiple: no
 #% guisection: Required
 #%end
@@ -46,7 +55,7 @@
 #% type: string
 #% gisprompt: old,cell,raster
 #% description: input bands
-#% required : yes
+#% required : no
 #% multiple: no
 #% guisection: Required
 #%end
@@ -55,7 +64,7 @@
 #% type: string
 #% gisprompt: old,cell,raster
 #% description: input bands
-#% required : yes
+#% required : no
 #% multiple: no
 #% guisection: Required
 #%end
@@ -64,7 +73,7 @@
 #% type: string
 #% gisprompt: old,cell,raster
 #% description: input bands
-#% required : yes
+#% required : no
 #% multiple: no
 #% guisection: Required
 #%end
@@ -73,7 +82,7 @@
 #% type: string
 #% gisprompt: old,cell,raster
 #% description: input bands
-#% required : yes
+#% required : no
 #% multiple: no
 #% guisection: Required
 #%end
@@ -82,7 +91,7 @@
 #% type: string
 #% gisprompt: old,cell,raster
 #% description: input bands
-#% required : yes
+#% required : no
 #% multiple: no
 #% guisection: Required
 #%end
@@ -180,24 +189,47 @@ def main ():
 		if gscript.find_file(value,
 			element = 'vector',
 			mapset = mapset)['file']:
-				gscript.fatal(_("Temporary vector map <{}> already exists.").format(value))
+				gscript.fatal(("Temporary vector map <{}> already exists.").format(value))
 		if gscript.find_file(value,
 			element = 'cell',
 			mapset = mapset)['file']:
-				gscript.fatal(_("Temporary raster map <{}> already exists.").format(value))
+				gscript.fatal(("Temporary raster map <{}> already exists.").format(value))
 
 	#input file
 	mtd_file = options['mtd_file']	
 	bands = {} 
-	bands['blue'] = options['blue']
-	bands['green'] = options['green']
-	bands['red'] = options['red']
-	bands['nir'] = options['nir']
-	bands['nir8a'] = options['nir8a']
-	bands['swir11'] = options['swir11']
-	bands['swir12'] = options['swir12']
+	if options['input_file']=='':
+		bands['blue'] = options['blue']
+		bands['green'] = options['green']
+		bands['red'] = options['red']
+		bands['nir'] = options['nir']
+		bands['nir8a'] = options['nir8a']
+		bands['swir11'] = options['swir11']
+		bands['swir12'] = options['swir12']
+	else:
+		input_file = options['input_file']
+		for line in file(input_file):
+			#gscript.message(line)
+			a = line.split('=')
+			a[1] = a[1].strip()
+			if a[0] == 'blue':
+				bands['blue'] = a[1]
+			elif a[0] == 'green':
+				bands['green'] = a[1]
+			elif a[0] == 'red':
+				bands['red'] = a[1]
+			elif a[0] == 'nir':
+				bands['nir'] = a[1]
+			elif a[0] == 'nir8a':
+				bands['nir8a'] = a[1]
+			elif a[0] == 'swir11':
+				bands['swir11'] = a[1]
+			elif a[0] == 'swir12':
+				bands['swir12'] = a[1]
+			else:
+				gscript.fatal("Syntax error in the txt file. Right syntax e.g blue=your_blue_map")
+		#gscript.message(bands.values())
 	d = 'double'
-	#bands = [b1, b2, b3, b4, b5, b7, b8]
 	f_bands = {}
 	cloud_def = 'cloud_def'
 	shadow_temp = 'shadow_temp'
@@ -207,6 +239,31 @@ def main ():
 	raster_max = {}
 	cloud_mask = options['cloud_mask']
 	shadow_mask = options['shadow_mask']
+
+	if bands['blue'] == '' or bands['green'] == '' or bands['red'] == '' or bands['nir'] == '' or bands['nir8a'] == '' or bands['swir11'] == '' or bands['swir12'] == '':
+		gscript.fatal(("All input bands (blue, green, red, nir, nir8a, swir11, swir12) are required"))
+
+	for key, value in bands.items():
+		if not gscript.find_file(value,
+			element = 'cell',
+			mapset = mapset)['file']:
+				gscript.fatal(("Raster map <{}> not found.").format(value))
+
+	#if not grass.overwrite():
+		#if grass.find_file(cloud_mask,
+			#element = 'vector',
+			#mapset = mapset)['file']:
+				#gscript.fatal(("Vector map {} already exists.").format(cloud_mask))
+		#if grass.find_file(shadow_mask,
+			#element = 'vector',
+			#mapset = mapset)['file']:
+				#gscript.fatal(("Vector map {} already exists.").format(shadow_mask))
+ 
+	if not flags["c"]:
+		if options['mtd_file']== '':
+			gscript.fatal("Metadata file is required for shadow mask computation. Please specified it")
+		if options['shadow_mask']=='':
+			gscript.fatal("Output name is required for shadow mask. Please specified it")
 
 	if flags["r"]:
 		region = gscript.run_command('g.region',
