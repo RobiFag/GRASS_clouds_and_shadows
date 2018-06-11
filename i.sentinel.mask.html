@@ -22,11 +22,17 @@ values which can lead to erroneous classification of water bodies as shadows. Th
 the final shadow mask, a control check is implemented. Clouds and shadows are spatially intersected in order to remove misclassified areas. 
 This means that all those shadow geometries which do not intersect a cloud geometry are removed.
 
-<center>
+<div align="center" style="margin: 10px">
+<a href="i_sentinel_mask_CS.png">
+<img src="i_sentinel_mask_CS.png" width="30%">
+</a><br>
+<i>Fig: Module General WorkFlow</i>
+</div>
+<!--center>
 <img src="i_sentinel_mask_CS.png" width="30%">
 <br>
 <i>Fig: Module General WorkFlow</i>
-</center>
+</center-->
 
 <p>
 All necessary input bands (blue, green, red, nir, nir8a, swir11, swir12) must be specified one by one or using a text file.
@@ -46,7 +52,7 @@ The final outputs are two different vector maps, one for clouds and one for shad
 <p>
 The metadata file (MTD_TL.xml) is required only if both masks (cloud and shadow)
 are computed. The module retrieves from this file the sun azimuth and zenith necessary for the shadow mask cleaning phase 
-<em>(see the schema above)<em>
+<em>(see the schema above)</em>
 <p>
 If flag <b>-s</b> is given all selected bands are rescaled using the specified scale factor [<b>scale_fac</b>=<em>integer</em>]. By default the scale factor is set to 10000, 
 the QUANTIFICATION_VALUE from the metadata of Sentinel 2 images.
@@ -57,7 +63,6 @@ The module allows to compute only the cloud mask or both cloud and shadow masks.
 of cloud mask is mandatory for shadow mask creation. In fact cloud map is used during the cleaning phase of the shadow mask in order to remove misclassifications.
 
 <h2>EXAMPLE</h2>
-
 <div class="code"><pre>
 i.sentinel.mask -r -s input_file=/home/input_bands.txt cloud_mask=cloud_sen2 shadow_mask=shadow_sen2 mtd_file=/home/MTD_TL.xml scale_fac=1000
 </pre></div>
