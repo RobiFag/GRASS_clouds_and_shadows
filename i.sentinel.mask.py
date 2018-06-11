@@ -172,8 +172,14 @@ def main ():
 	mapset = gscript.gisenv()['MAPSET']
 	mapset2 = '@{}'.format(mapset)
 	# prepare temporary map raster names
-    	processid = "{:.2f}".format(time.time())
-	processid = processid.replace(".", "_")
+    	#processid = "{:.2f}".format(time.time())
+	#processid = processid.replace(".", "_")
+	processid = os.getpid()
+	processid = str(processid)
+	#r = 'raster'
+	#v = 'vector'
+	tmp["cloud_def"] = "cloud_def"+ processid
+	tmp["shadow_temp"] = "shadow_temp"+ processid
 	tmp["cloud_v"] = "cloud_v_" + processid
 	tmp["shadow_temp_v"] = "shadow_temp_v_" + processid
 	tmp["shadow_temp_mask"] = "shadow_temp_mask_" + processid
@@ -211,28 +217,16 @@ def main ():
 		for line in file(input_file):
 			#gscript.message(line)
 			a = line.split('=')
+			#gscript.message(len(a))
+			if len(a) <> 2 or a[0] not in ['blue', 'green', 'red', 'nir', 'nir8a', 'swir11', 'swir12' ]:
+                        	gscript.fatal("Syntax error in the txt file. See the manual for further information about the right syntax.")
 			a[1] = a[1].strip()
-			if a[0] == 'blue':
-				bands['blue'] = a[1]
-			elif a[0] == 'green':
-				bands['green'] = a[1]
-			elif a[0] == 'red':
-				bands['red'] = a[1]
-			elif a[0] == 'nir':
-				bands['nir'] = a[1]
-			elif a[0] == 'nir8a':
-				bands['nir8a'] = a[1]
-			elif a[0] == 'swir11':
-				bands['swir11'] = a[1]
-			elif a[0] == 'swir12':
-				bands['swir12'] = a[1]
-			else:
-				gscript.fatal("Syntax error in the txt file. Right syntax e.g blue=your_blue_map")
+			bands[a[0]] = a[1]
+
+
 		#gscript.message(bands.values())
 	d = 'double'
 	f_bands = {}
-	cloud_def = 'cloud_def'
-	shadow_temp = 'shadow_temp'
 	scale_fac = options['scale_fac']
 	cloud_clean_T = 50000
 	shadow_clean_T = 10000
@@ -278,9 +272,10 @@ def main ():
 		for key, b in bands.items():
 			gscript.message(b)
 			b = gscript.find_file(b, element = 'cell')['name']
-			gscript.mapcalc('{r} = 1.0 * ({a})/{c}'.format(
+			gscript.mapcalc('{r} = 1.0 * ({b})/{scale_fac}'.format(
 				r=("{}_{}".format(b, d)),
-				a=b, c=scale_fac),
+				b=b, 
+				scale_fac=scale_fac),
 				overwrite=True)
 			f_bands[key] = "{}_{}".format(b, d)
 		gscript.message(f_bands.values())
@@ -334,11 +329,11 @@ def main ():
 		fourth_rule,
 		fifth_rule)
 	expr_c = '{} = if({}, 0, null( ))'.format(
-		cloud_def,
+		tmp["cloud_def"],
 		cloud_rules)	
 	gscript.mapcalc(expr_c, overwrite=True)
 	gscript.run_command('r.to.vect',
-		input=cloud_def,
+		input=tmp["cloud_def"],
 		output=tmp["cloud_v"],
 		type='area',
 		flags='s',
@@ -376,11 +371,11 @@ def main ():
 			sixth_rule, 
 			seventh_rule)
 		expr_s = '{} = if({}, 0, null( ))'.format(
-			shadow_temp,
+			tmp["shadow_temp"],
 			shadow_rules)
 		gscript.mapcalc( expr_s, overwrite=True)
 		gscript.run_command('r.to.vect',
-			input=shadow_temp,
+			input=tmp["shadow_temp"],
 			output=tmp["shadow_temp_v"],
 			type='area',
 			flags='s',
