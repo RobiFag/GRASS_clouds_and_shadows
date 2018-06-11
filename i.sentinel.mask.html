@@ -5,44 +5,15 @@ The implemented procedure consists essentially of values thresholds, comparisons
 rough maps of clouds and shadows which require further improvements and elaborations (e.g. transformation from raster to vector, cleaning geometries,
  removing small areas, checking topology, etc.) carried out in the different steps of the procedure. 
 
-<!--table border="0">
-	<tr>
-	<td align="center" valign="bottom"><a href="i_sentinel_mask_GWF.png"><img src="i_sentinel_mask_GWF.png" width="50%"></a><br><i>Fig: Module General WorkFlow</i></td>
-	<td align="center" valign="bottom"><a href="i_sentinel_mask_CD.png"><img src="i_sentinel_mask_CD.png" width="50%"></a><br><i>Fig: Cloud detection procedure</i></td>
-	<td align="center" valign="bottom"><a href="i_sentinel_mask_SD.png"><img src="i_sentinel_mask_SD.png" width="50%"></a><br><i>Fig: Shadow detection procedure</i></td>
-	</tr>
-</table-->
-
 <table cellspacing="2" cellpadding="2" width="100%" border="0">
 	<tbody>
 		<tr>
-		<td align="center" valign="bottom"><a href="i_sentinel_mask_GWF.png"><img src="i_sentinel_mask_GWF.png""></a><br><i>Fig: Module General WorkFlow</i></td>
-		<td align="center" valign="bottom"><a href="i_sentinel_mask_CD.png"><img src="i_sentinel_mask_CD.png"></a><br><i>Fig: Cloud detection procedure</i></td>
-		<td align="center" valign="bottom"><a href="i_sentinel_mask_SD.png"><img src="i_sentinel_mask_SD.png"></a><br><i>Fig: Shadow detection procedure</i></td>
+		<td align="center" valign="bottom"><a href="i_sentinel_mask_GWF.png"><img src="i_sentinel_mask_GWF.png" width="100%"></a><br><i>Fig: Module General WorkFlow</i></td>
+		<td align="center" valign="bottom"><a href="i_sentinel_mask_CD.png"><img src="i_sentinel_mask_CD.png" width="100%"></a><br><i>Fig: Cloud detection procedure</i></td>
+		<td align="center" valign="bottom"><a href="i_sentinel_mask_SD.png"><img src="i_sentinel_mask_SD.png" width="100%"></a><br><i>Fig: Shadow detection procedure</i></td>
 		</tr>
 	</tbody>
 </table>
-
-<!--div align="center" style="margin: 10px">
-<a href="i_sentinel_mask_GWF.png">
-<img src="i_sentinel_mask_GWF.png" width="30%">
-</a><br>
-<i>Fig: Module General WorkFlow</i>
-</div>
-
-<div align="center" style="margin: 10px">
-<a href="i_sentinel_mask_CD.png">
-<img src="i_sentinel_mask_CD.png" width="40%">
-</a><br>
-<i>Fig: Cloud detection procedure</i>
-</div>
-
-<div align="center" style="margin: 10px">
-<a href="i_sentinel_mask_SD.png.png">
-<img src="i_sentinel_mask_SD.png" width="40%">
-</a><br>
-<i>Fig: Shadow detection procedure</i>
-</div-->
 
 <p>
 The algorithm has been developed starting from rules found in literature (Parmes et. al 2017) and conveniently refined.<br>
@@ -92,9 +63,9 @@ The module allows to compute only the cloud mask or both cloud and shadow masks.
 of cloud mask is mandatory for shadow mask creation. In fact cloud map is used during the cleaning phase of the shadow mask in order to remove misclassifications.
 
 <h2>EXAMPLE</h2>
-<div class="code"><pre>
+<div class="code">
 i.sentinel.mask -r -s input_file=/home/input_bands.txt cloud_mask=cloud_sen2 shadow_mask=shadow_sen2 mtd_file=/home/MTD_TL.xml scale_fac=1000
-</pre></div>
+</div>
 -r to set the computational region to the maximum image extente and -s to rescale the input bands with the specified scale factor (in this case 1000)
 
 <h2>REFERENCE</h2>
