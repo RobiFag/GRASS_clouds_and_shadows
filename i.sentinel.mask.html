@@ -29,7 +29,18 @@ This means that all those shadow geometries which do not intersect a cloud geome
 </center>
 
 <p>
-At the moment all input bands must be specified by users.
+All necessary input bands (blue, green, red, nir, nir8a, swir11, swir12) must be specified one by one or using a text file.
+The text file has to be written following the syntax below:
+
+<div class="code"><pre>
+blue=<em>your_blue_map</em>
+green=<em>your_green_map</em>
+red=<em>your_red_map</em>
+nir=<em>your_nir_map</em>
+nir8a=<em>your_nir8a_map</em>
+swir11=<em>your_swir11_map</em>
+swir12=<em>your_swir12_map</em>
+</pre></div>
 <p>
 The final outputs are two different vector maps, one for clouds and one for shadows.
 <p>
@@ -44,6 +55,18 @@ The module takes the current region settings into accout. To ignore the current 
 <p>
 The module allows to compute only the cloud mask or both cloud and shadow masks. If flag <b>-c</b> is given, only the cloud procedure will be performed. The computation 
 of cloud mask is mandatory for shadow mask creation. In fact cloud map is used during the cleaning phase of the shadow mask in order to remove misclassifications.
+
+<h2>EXAMPLE</h2>
+
+<div class="code"><pre>
+i.sentinel.mask -r -s input_file=/home/input_bands.txt cloud_mask=cloud_sen2 shadow_mask=shadow_sen2 mtd_file=/home/MTD_TL.xml scale_fac=1000
+</pre></div>
+-r to set the computational region to the maximum image extente and -s to rescale the input bands with the specified scale factor (in this case 1000)
+
+<h2>REFERENCE</h2>
+<ul>
+<li>Parmes et. al 2017</li>
+</ul>
 
 <h2>SEE ALSO</h2>
 
