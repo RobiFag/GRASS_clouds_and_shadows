@@ -77,8 +77,8 @@ def main ():
     gscript.message(_('--- Computed mean target elevation above sea level: {} ---'.format(dem_mean)))
 
     for key, bb in bands.items():
-        text = open("bbbbbbb.txt", "w")
-        if sensor.text == 'Sentinel-2A': #sensor
+        text = open("control_file.txt", "w")
+        if sensor.text == 'Sentinel-2A':
             text.write(str(25) + "\n")
         elif sensor.text == 'Sentinel-2B':
             text.write(str(26) + "\n")
@@ -176,7 +176,7 @@ def main ():
         
         gscript.run_command('i.atcorr',
             input=bb,
-            parameters='bbbbbbb.txt',
+            parameters='control_file.txt',
             output='{}_{}'.format(bb, 'cor'),
             range='1,10000',
             elevation=dem,
