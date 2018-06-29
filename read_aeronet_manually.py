@@ -13,10 +13,12 @@ count=0
 columns = []
 m_time = []
 dates_list = []
-columns = []
+t_columns = []
 i_col = []
 coll = []
 wl = []
+
+
 for row in file(file_name): # reading file from line 4 
     count+=1
     if count==4:
@@ -53,19 +55,21 @@ print closest
 print timedelta 
 print dates.index(closest)
 
+count=0
 for row in file(file_name): # reading file from line 4 
     count+=1
     if count==4:
-        columns = row.split(',')
-        for i, col in enumerate(columns):
+        t_columns = row.split(',')
+        for i, col in enumerate(t_columns):
             if "AOT_" in col:
                 i_col.append(i)
                 coll.append(col)
 for line in coll:
     l = line.split('_')
     wl.append(int(l[1]))
-print wl
+
 print i_col,coll
+print wl
 
 aot_req = 550
 upper = min([ i for i in wl if i >= aot_req], key=lambda x:abs(x-aot_req))
