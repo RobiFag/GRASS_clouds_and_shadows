@@ -5,6 +5,7 @@ import grass.script as gscript
 import xml.etree.ElementTree as et
 from datetime import datetime
 import os
+import math
 
 
 def main ():
@@ -12,6 +13,7 @@ def main ():
     bands = {}
     cor_bands = {}
     dem = 'dem_sicily'
+    vis = ''
     
     ### create xml "tree" for reading parameters from metadata ###
     tree = et.parse('/home/roberta/remote/Progetti_convegni/ricerca/2015_2018_PhD_roberta/sentinel2/py_script/MTD_MSIL1C.xml')
@@ -68,27 +70,161 @@ def main ():
     lat = (float(c_region['ll_clat']))
     gscript.message(_(lon))
     gscript.message(_(lat))
-    
+
+    ### read and compute AOT from AERONET file ###
+    file_name="/home/roberta/remote/Progetti_convegni/ricerca/2015_2018_PhD_roberta/home/roberta/ATM_COR/dati_AERONET/170801_170831_Sirmione_Museo_GC.dubovik"
+
+    i=0
+    cc=0 
+    count=0
+
+    columns = []
+    m_time = []
+    dates_list = []
+    t_columns = []
+    i_col = []
+    coll = []
+    wl = []
+
+    for row in file(file_name): # reading file from line 4 
+        count+=1
+        if count==4:
+            columns = row.split(',')
+
+    count=0
+    for row in file(file_name): # reading file from line 5 
+        count+=1
+        if count>=5:
+            columns = row.split(',')
+            m_time.append(columns[0] + ' ' + columns[1])
+
+    dates = [datetime.strptime(row, '%d:%m:%Y %H:%M:%S') for row in m_time]
+    dates_list.append(dates)
+    format_bd = time_py.strftime('%d/%m/%Y %H:%M:%S')
+    gscript.message(_(format_bd))
+    base_date = str(format_bd) #'13/08/2017 06:00:00'
+    b_d = datetime.strptime(base_date,'%d/%m/%Y %H:%M:%S')
+
+    for line in dates_list:
+        closest = min(line, key=lambda x: abs(x - b_d))
+        timedelta = abs(closest - b_d)
+
+    count=0
+    for row in file(file_name): # reading file from line 4 
+        count+=1
+        if count==4:
+            t_columns = row.split(',')
+            for i, col in enumerate(t_columns):
+                if "AOT_" in col:
+                    i_col.append(i)
+                    coll.append(col)
+    for line in coll:
+        l = line.split('_')
+        wl.append(int(l[1]))
+
+    aot_req = 550
+    upper = min([ i for i in wl if i >= aot_req], key=lambda x:abs(x-aot_req))
+    lower = min([ i for i in wl if i < aot_req], key=lambda x:abs(x-aot_req))
+
+    count=0
+    for row in file(file_name): 
+        count+=1
+        if count==dates.index(closest)+5:
+            t_columns = row.split(',')
+            count2=0
+            check_up=0
+            check_lo=0
+            while count2<len(i_col) and check_up<1:
+                if t_columns[wl.index(upper)+i_col[0]]=="N/A": #search for the not null value for the upper wavelenght
+                    aot_req_tmp = upper
+                    upper = min([ i for i in wl if i > aot_req_tmp], key=lambda x:abs(x-aot_req_tmp))
+                else:
+                    wl_upper = float(upper)
+                    aot_upper = float(t_columns[wl.index(upper)+i_col[0]])
+                    check_up=1
+                count2+=1
+            count2=0
+            while count2<len(i_col) and check_lo<1:
+                if t_columns[wl.index(lower)+i_col[0]]=="N/A": #search for the not null value for the lower wavelenght
+                    aot_req_tmp = lower
+                    lower = min([ i for i in wl if i < aot_req_tmp], key=lambda x:abs(x-aot_req_tmp))
+                else:
+                    wl_lower = float(lower)
+                    aot_lower = float(t_columns[wl.index(lower)+i_col[0]])
+                    check_lo=1
+                count2+=1
+
+    alpha = math.log(aot_lower/aot_upper)/math.log(wl_upper/wl_lower)
+    aot550 = math.exp(math.log(aot_lower) - math.log(550.0/wl_lower)*alpha)
+    gscript.message(_('--- Computed AOT at 550 nm: {} ---'.format(aot550)))
+
     ### compute mean target elevation in km ###
-    stats = gscript.parse_command('r.univar', flags='g', map=dem)
-    mean = (float(stats['mean']))
+    stats_d = gscript.parse_command('r.univar', flags='g', map=dem)
+    mean = (float(stats_d['mean']))
     conv_fac = -0.001
     dem_mean = mean * conv_fac
-    gscript.message(_('--- Computed mean target elevation above sea level: {} ---'.format(dem_mean)))
+    gscript.message(_('--- Computed mean target elevation above sea level: {:.3f} m ---'.format(mean)))
+    
+    if vis != '':
+        stats_v = gscript.parse_command('r.univar', flags='g', map=vis)
+        vis_mean = int(float(stats_v['mean']))
+        #conv_fac = -0.001
+        #dem_mean = mean * conv_fac
+        gscript.message(_('--- Computed visibility mean value: {} Km ---'.format(vis_mean)))
+    else:
+        gscript.message(_('--- No visibility map has been provided ---'))
 
     for key, bb in bands.items():
+        gscript.message(_('--- Compiling the control file.. ---'))
         text = open("control_file.txt", "w")
         if sensor.text == 'Sentinel-2A':
             text.write(str(25) + "\n")
         elif sensor.text == 'Sentinel-2B':
             text.write(str(26) + "\n")
         else: 
-            gscript.message(_('error'))
+            gscript.message(_('--- The input image does not seem to be a Sentinel image ---'))
         text.write('{} {} {} {} {}'.format(time_py.month, time_py.day, dec_hour, lon, lat) + "\n")
-        text.write('2' + "\n") #atmo model?
+        #text.write('2' + "\n") #atmo model?
+        winter = [1, 2, 3, 4, 10, 11, 12]
+        summer = [5, 6, 7, 8, 9]
+        if lat > -15.00 and lat <= 15.00: #tropical
+            text.write('1' + "\n")
+        elif lat > 15.00 and lat <= 45.00:
+            if b_d.month in winter: #midlatitude winter
+                text.write('3' + "\n")
+            else: #midlatitude summer
+                text.write('2' + "\n")
+        elif lat > -15.00 and lat <= -45.00: 
+            if b_d.month in winter: #midlatitude summer
+                text.write('2' + "\n")
+            else: #midlatitude winter
+                text.write('3' + "\n")
+        elif lat > 45.00 and lat <= 60.00:
+            if b_d.month in winter: #subartic winter
+                text.write('5' + "\n")
+            else: #subartic summer
+                text.write('4' + "\n")
+        elif lat > -45.00 and lat <= -60.00:
+            if b_d.month in winter: #subartic summer
+                text.write('4' + "\n")
+            else: #subartic winter
+                text.write('5' + "\n")
+        else:
+            gscript.message(_('--- Latitude {} is out of range ---'.format(lat)))
         text.write('1' + "\n") #aerosol model?
-        text.write('0' + "\n") #visibility
-        text.write('0.2' + "\n") #AOT add script for reading aot from aeronet data
+        if vis != '':
+            text.write('{}'.format(vis_mean) + "\n")
+            #if aot550 != '' and m_aot != '':
+                #gscript.warning(_("AOT input will be ignored"))
+        elif vis == '' and aot550 != 0:
+            text.write('0' + "\n") #visibility
+            text.write('{}'.format(aot550) + "\n") #AOT add script for reading aot from aeronet data
+        elif vis == '' and aot550 == 0:
+            text.write('-1' + "\n") #visibility
+            text.write('{}'.format(aot550) + "\n") #AOT add script for reading aot from aeronet data
+        else:
+            gscript.fatal("Unable to retrieve visibility or AOT value, check the input")
+        #text.write('{}'.format(aot550) + "\n") #AOT add script for reading aot from aeronet data
         text.write('{}'.format(dem_mean) + "\n") #mean elevation 
         text.write('-1000' + "\n") #sensor height
         b = bb.split('_')
@@ -171,7 +307,7 @@ def main ():
             gscript.message(_(b[2]))
             text.write('191') #band
         else:
-            gscript.message(_("some errors"))
+            gscript.message(_('--- Bands do not seem to belong to a Sentinel image ---'))
     	text.close()
         
         gscript.run_command('i.atcorr',
@@ -184,7 +320,8 @@ def main ():
             flags='r',
             overwrite=True)
         cor_bands[key] = "{}_{}".format(bb, 'cor')
-    gscript.message(_(cor_bands.values()))
+    #gscript.message(_(cor_bands.values()))
+    gscript.message(_('--- All bands have been processed ---'))
 
     for key, cb in cor_bands.items():
         gscript.message(_(cb))
