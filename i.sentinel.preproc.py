@@ -25,10 +25,10 @@
 #% keywords: atmospheric correction
 #%End
 #%option
-#% key: mtd_file
+#% key: input_dir
 #% type: string
-#% gisprompt: old,file,file
-#% description: Name of the image metadata file (MTD_MSIL1C.xml)
+#% gisprompt: old,dir,dir
+#% description: Name of the directory where the image and metadata file are stored (*.SAFE)
 #% required : yes
 #% multiple: no
 #% guisection: Input
@@ -87,11 +87,6 @@
 #% multiple: no
 #% guisection: 6S Parameters
 #%end
-#%flag
-#% key: a
-#% description: Use AOT instead visibility
-#% guisection: 6S Parameters
-#%end
 #%option
 #% key: suffix
 #% type: string
@@ -117,9 +112,24 @@
 #% guisection: Output
 #%end
 #%flag
+#% key: a
+#% description: Use AOT instead visibility
+#% guisection: 6S Parameters
+#%end
+#%flag
 #% key: t
 #% description: Create the input text file for i.sentinel.mask
 #% guisection: Output
+#%end
+#%flag
+#% key: r
+#% description: Reproject raster data using r.import if needed
+#% guisection: Input
+#%end
+#%flag
+#% key: i
+#% description: Skip import of Sentinel bands
+#% guisection: Input
 #%end
 
 import grass.script as gscript
@@ -141,7 +151,11 @@ def main ():
     cor_bands = {}
     dem = options['elevation']	
     vis = options['visibility']
-    mtd_file = options['mtd_file']
+    input_dir = options['input_dir']
+    mtd_file = options['input_dir'] + '/MTD_MSIL1C.xml'
+    ### check if MTD_MSIL1C.xml exists
+    if not os.path.isfile(mtd_file):
+        gscript.fatal(_("File MTD_MSIL1C.xml not found. Please check the input directory"))
     atmo_mod = options['atmospheric_model']
     aerosol_mod = options['aerosol_model']
     aeronet_file = options['aeronet_file']
@@ -154,61 +168,72 @@ def main ():
     txt_file = options['text_file']
     tmp_file = gscript.tempfile()
 
+    ### import bands ###
+    if not flags["i"]:
+        try:
+            if flags["r"]:
+                gscript.run_command('i.sentinel.import',
+                    input=options['input_dir'],
+                    flags='r')
+            else:
+                gscript.run_command('i.sentinel.import',
+                    input=options['input_dir'])
+        except:
+            gscript.fatal(("Module rquire i.sentinel.import. Please install it using g.extension."))
+
     ### create xml "tree" for reading parameters from metadata ###
     tree = et.parse(mtd_file)
     root = tree.getroot()
-
-    if root[0].findall('Product_Info'):
-        ### start reading the xml file ###
-        for elem in root[0].findall('Product_Info'):
-            datatake = elem.find('Datatake')
-            sensor = datatake.find('SPACECRAFT_NAME') #geometrical conditions = sensor 
-            time_str = elem.find('GENERATION_TIME') #acquisition date and time 
-            time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ') #date and time conversion 
-            dec_hour = float(time_py.hour) + float(time_py.minute)/60 + float(time_py.second)/3600 #compute decimal hour
-            ### read input bands from metadata ###
-            product = elem.find('Product_Organisation')
-            g_list = product.find('Granule_List')
-            granule = g_list.find('Granule')
-            images = granule.find('IMAGE_FILE')
-            img_name = images.text.split('/')
-            ### check if the mtd file corresponds with the input image
-            if gscript.find_file(img_name[3],
-                element = 'cell',
-                mapset = mapset)['file']:
-                    for img in root.iter('IMAGE_FILE'):
-                        a = img.text.split('/')
-                        b = a[3].split('_')
-                        if b[2] == 'B01':
-                            bands['costal'] = a[3]
-                        elif b[2] == 'B02':
-                            bands['blue'] = a[3]
-                        elif b[2] == 'B03':
-                            bands['green'] = a[3]
-                        elif b[2] == 'B04':
-                            bands['red'] = a[3]
-                        elif b[2] == 'B05':
-                            bands['re5'] = a[3]
-                        elif b[2] == 'B06':
-                            bands['re6'] = a[3]
-                        elif b[2] == 'B07':
-                            bands['re7'] = a[3]
-                        elif b[2] == 'B08':
-                            bands['nir'] = a[3]
-                        elif b[2] == 'B8A':
-                            bands['nir8a'] = a[3]
-                        elif b[2] == 'B09':
-                            bands['vapour'] = a[3]
-                        elif b[2] == 'B10':
-                            bands['cirrus'] = a[3]
-                        elif b[2] == 'B11':
-                            bands['swir11'] = a[3]
-                        elif b[2] == 'B12':
-                            bands['swir12'] = a[3]
-            else:
-                gscript.fatal(("The input metadata file seems to belong to another image"))
-    else:
-        gscript.fatal(("The input metadata file does not seem to be the right one. Select the MTD_MSIL1C.xml"))
+    
+    ### start reading the xml file ###
+    for elem in root[0].findall('Product_Info'):
+        datatake = elem.find('Datatake')
+        sensor = datatake.find('SPACECRAFT_NAME') #geometrical conditions = sensor 
+        time_str = elem.find('GENERATION_TIME') #acquisition date and time 
+        time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ') #date and time conversion 
+        #gscript.message(_(time_py))
+        dec_hour = float(time_py.hour) + float(time_py.minute)/60 + float(time_py.second)/3600 #compute decimal hour
+        ### read input bands from metadata ###
+        product = elem.find('Product_Organisation')
+        g_list = product.find('Granule_List')
+        granule = g_list.find('Granule')
+        images = granule.find('IMAGE_FILE')
+        img_name = images.text.split('/')
+        ### check if the mtd file corresponds with the input image
+        if gscript.find_file(img_name[3],
+            element = 'cell',
+            mapset = mapset)['file']:
+                for img in root.iter('IMAGE_FILE'):
+                    a = img.text.split('/')
+                    b = a[3].split('_')
+                    if b[2] == 'B01':
+                        bands['costal'] = a[3]
+                    elif b[2] == 'B02':
+                        bands['blue'] = a[3]
+                    elif b[2] == 'B03':
+                        bands['green'] = a[3]
+                    elif b[2] == 'B04':
+                        bands['red'] = a[3]
+                    elif b[2] == 'B05':
+                        bands['re5'] = a[3]
+                    elif b[2] == 'B06':
+                        bands['re6'] = a[3]
+                    elif b[2] == 'B07':
+                        bands['re7'] = a[3]
+                    elif b[2] == 'B08':
+                        bands['nir'] = a[3]
+                    elif b[2] == 'B8A':
+                        bands['nir8a'] = a[3]
+                    elif b[2] == 'B09':
+                        bands['vapour'] = a[3]
+                    elif b[2] == 'B10':
+                        bands['cirrus'] = a[3]
+                    elif b[2] == 'B11':
+                        bands['swir11'] = a[3]
+                    elif b[2] == 'B12':
+                        bands['swir12'] = a[3]
+        else:
+            gscript.fatal(("The metadata file seems to belong to an unexpected image ({}).\n Check the input directory or import the corresponding bands").format(img_name[3].replace('_B01','')))
 
     ###check if input exist
 	for key, value in bands.items():
