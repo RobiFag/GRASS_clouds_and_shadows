@@ -70,13 +70,13 @@ Using i.sentinel.preproc the only parameters from the list above that users have
 <p>
 The geometrical condition of the satellite are read from the MTD_MSIL1C.xml file and converted to the corresponding i.atcorr code, 25 for Sentinel 2A mission and 26 for Sentinel 2B. 
 <br><br>
-<b><li> Date, time, longitude and latitude </b>
+<li><b> Date, time, longitude and latitude </b>
 <p>
 Date (month and day) and time are read from the MTD_MSIL1C.xml file. The date (with the format YYYY-MM-DDTHH:MM:SSZ) is converted in a standard format and only the month and the day are selected and added to the control file.<br><br>
 Time is already in Greenwich Mean Time (GMT), as i.atcorr requires, and it's automatically converted to decimal hours.<br>
 Longitude and latitude are computed from the computational region and converted to WGS84 decimal coordinates.
 <br><br>
-<b><li> Atmospheric model</b>
+<li><b> Atmospheric model</b>
 <p>
 Only some options are available:
 <ul> 
@@ -94,7 +94,7 @@ Users can choose the proper option from a drop-down menu. The desired model is a
 The default option is <em>Automatic</em> which consists in the automatic identification of the proper atmospheric model for the input image. The <em>Automatic</em> option reads the latitude of the center of the computational region and uses it to choose between Midlatitude (15.00 > lat <= 45.00), Tropical (-15.00 > lat <= 15.00) and Subarctic (45.00 > lat <= 60.00) for Northern Hemisphere (obviously it also works for the Southern Hemisphere). Then, the month from the acquisition date is used to distinguish summer or winter in case of Midlatitude or Subarctic model. Once the proper atmospheric model is identified, it is converted to the corresponding code and added to the control file.<br>
 Note that this is a simplified and standardized method to identify the atmospheric model. Obviously, it is possible to choose other options from those available.
 <br><br>
-<b><li> Aerosol model</b><br>
+<li><b> Aerosol model</b><br>
 <p>
 Also in this case, only some options are available and users have to select the desired one from the drop-down menu, then it is converted to the corresponding code and added to the control file.
 <ul> 
@@ -108,7 +108,7 @@ Also in this case, only some options are available and users have to select the 
 </ul><br><br>
 No automatic procedure has been implemented in this case.
 <br><br>
-<b><li> Visibility or AOD </b><br>
+<li><b> Visibility or AOD </b><br>
 <p>
 By default, i.sentinel.preproc uses the input visibility map to estimate a visibility value to be added in the control file. If no visibility map is available for the processed scene, it is possible to use an estimated Aerosol Optical Depth (AOD) value checking the <b>-a</b> flag.<br>
 If the -a flag is checked and a visibility map is provided, the visibility will be ignored and no mean visibility value will be computed and added to the control file. Whereas, if the -a flag isn't checked and an AOD value is provided it will be ignored and not added to the control file.<br><br> In the same way, if the -a flag is checked and a visibility map is provided it will be excluded from atmospheric correction process.<br><br>
