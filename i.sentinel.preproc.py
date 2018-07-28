@@ -5,7 +5,7 @@
 #
 # MODULE:   i.sentinel.preproc
 # AUTHOR(S):    Roberta Fagandini, Moritz Lennert, Roberto Marzocchi
-# PURPOSE:  Download, import and perform atmospheric correction for Sentinel-2 images
+# PURPOSE:  Import and perform atmospheric correction for Sentinel-2 images
 #
 # COPYRIGHT:	(C) 2018 by the GRASS Development Team
 #
@@ -16,7 +16,7 @@
 #############################################################################
 
 #%Module
-#% description: Download, import and perform atmospheric correction for Sentinel-2 images
+#% description: Import and perform atmospheric correction for Sentinel-2 images
 #% overwrite: yes
 #% keywords: imagery
 #% keywords: sentinel 
@@ -54,7 +54,7 @@
 #%option
 #% key: atmospheric_model
 #% type: string
-#% description: Select the proper Aerosol model
+#% description: Select the proper Atmospheric model
 #% options: Automatic,No gaseous absorption,Tropical,Midlatitude summer,Midlatitude winter,Subarctic summer,Subarctic winter,Us standard 62
 #% answer: Automatic
 #% required : yes
@@ -72,9 +72,9 @@
 #% guisection: 6S Parameters
 #%end
 #%option
-#% key: aot_value
+#% key: aod_value
 #% type: string
-#% description: AOT value at 550nm
+#% description: AOD value at 550nm
 #% required : no
 #% guisection: 6S Parameters
 #%end
@@ -152,6 +152,12 @@ def main ():
     dem = options['elevation']	
     vis = options['visibility']
     input_dir = options['input_dir']
+    #gscript.message(os.path.basename(input_dir))
+    ### check if the input folder belongs to a L1C image ###
+    level_dir = os.path.basename(input_dir).split('_')
+    #gscript.message(level_dir[1])
+    if level_dir[1] != 'MSIL1C':
+        gscript.fatal(_("The input directory does not belong to a L1C Sentinel image. Please check the input directory"))
     mtd_file = options['input_dir'] + '/MTD_MSIL1C.xml'
     ### check if MTD_MSIL1C.xml exists
     if not os.path.isfile(mtd_file):
@@ -263,25 +269,37 @@ def main ():
     gscript.message(_("--- The computational region has been temporarily set to image max extent ---"))
 
     if flags["a"]:
-        if vis!='' and (options['aot_value']!='' or aeronet_file!=''):
-            gscript.warning(_('--- Visibility map will be ignored ---'))
-        elif options['aot_value']!='' and aeronet_file!='':
+        if vis!='':
+            if options['aod_value']!='' and aeronet_file!='':
+                gscript.warning(_('--- Visibility map will be ignored ---'))
+                gscript.fatal('Only one parameter must be provided, AOT value or AERONET file')
+            elif options['aod_value']=='' and aeronet_file=='':
+                gscript.fatal('if -a flag is checked an AOT value or AERONET file must be provided')
+            elif options['aod_value']!='':
+                gscript.warning(_('--- Visibility map will be ignored ---'))
+                check_value = 1
+                aot550 = options['aod_value']
+            elif aeronet_file!='':
+                gscript.warning(_('--- Visibility map will be ignored ---'))
+        elif options['aod_value']!='' and aeronet_file!='':
             gscript.fatal('Only one parameter must be provided, AOT value or AERONET file')
-        elif options['aot_value']!='':
+        elif options['aod_value']!='':
             check_value = 1
-            aot550 = options['aot_value']
-        elif options['aot_value']=='' and aeronet_file=='':
-            gscript.fatal('AOT value or AERONET file must be provided')
+            aot550 = options['aod_value']
+        elif aeronet_file!='':
+            gscript.warning(_('--- Visibility map will be ignored ---'))
+        elif options['aod_value']=='' and aeronet_file=='':
+            gscript.fatal('if -a flag is checked an AOT value or AERONET file must be provided')
     else:
         if vis!='':
-            if options['aot_value']!='' or aeronet_file!='':
+            if options['aod_value']!='' or aeronet_file!='':
                 gscript.warning(_('--- AOT will be ignored ---'))
             check_file = 1
             stats_v = gscript.parse_command('r.univar', flags='g', map=vis)
             vis_mean = int(float(stats_v['mean']))
             gscript.message(_('--- Computed visibility mean value: {} Km ---'.format(vis_mean)))
-        elif vis=='' and (options['aot_value']!='' or aeronet_file!=''):
-            gscript.fatal('Check the flag a to use AOT instead of visibility')
+        elif vis=='' and (options['aod_value']!='' or aeronet_file!=''):
+            gscript.fatal('Check the -a flag to use AOT instead of visibility')
         else:
             gscript.fatal('No visibility map has been provided')  
 
@@ -317,7 +335,7 @@ def main ():
         dates = [datetime.strptime(row, '%d:%m:%Y %H:%M:%S') for row in m_time]
         dates_list.append(dates)
         format_bd = time_py.strftime('%d/%m/%Y %H:%M:%S')
-        gscript.message(_(format_bd))
+        #gscript.message(_(format_bd))
         base_date = str(format_bd)
         b_d = datetime.strptime(base_date,'%d/%m/%Y %H:%M:%S')
 
@@ -369,7 +387,7 @@ def main ():
                         aot_lower = float(t_columns[wl.index(lower)+i_col[0]])
                         check_lo=1
                     count2+=1
-        ### compute AOT at 550 nm
+        ### compute AOD at 550 nm
         alpha = math.log(aot_lower/aot_upper)/math.log(wl_upper/wl_lower)
         aot550 = math.exp(math.log(aot_lower) - math.log(550.0/wl_lower)*alpha)
         gscript.message(_('--- Computed AOT at 550 nm: {} ---'.format(aot550)))
@@ -451,8 +469,17 @@ def main ():
         elif aerosol_mod == 'Stratospheric model':
             text.write('6' + "\n") #aerosol model
         #Visibility and/or AOT
-        if vis != '':
+        if not flags["a"] and vis != '':
             text.write('{}'.format(vis_mean) + "\n")
+            #if aot550 != '' and aod_value != '':
+                #gscript.warning(_("AOT input will be ignored"))
+        elif flags["a"] and vis != '':
+            if aot550 != 0:
+                text.write('0' + "\n") #visibility
+                text.write('{}'.format(aot550) + "\n") #AOT add script for reading aot from aeronet data
+            elif aot550 == 0:
+                text.write('-1' + "\n") #visibility
+                text.write('{}'.format(aot550) + "\n") #AOT add script for reading aot from aeronet data
         elif vis == '' and aot550 != 0:
             text.write('0' + "\n") #visibility
             text.write('{}'.format(aot550) + "\n") #AOT
@@ -547,7 +574,7 @@ def main ():
             gscript.fatal('Bands do not seem to belong to a Sentinel image')
     	text.close()
         
-        if vis == '':
+        if flags["a"]:
             gscript.run_command('i.atcorr',
                 input=bb,
                 parameters=tmp_file,
@@ -582,7 +609,8 @@ def main ():
         gscript.message(_(cb))
         gscript.run_command('r.colors',
             map=cb,
-            color='grey')
+            color='grey',
+            flags='e')
 
     gscript.del_temp_region()
     gscript.message(_('--- The computational region has been reset to the previous one ---'))
