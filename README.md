@@ -22,7 +22,7 @@ In order to make tha data preparation easier, another GRASS GIS addon module has
 i.sentinel.preproc is a module for the preprocessing of Sentinel 2 images (Level-1C Single Tile product) which wraps the import and the atmospheric correction using respectively two existing GRASS GIS modules, i.sentinel.import and i.atcorr.<br>
 The aim is to provide a simplified module which allows importing images and performing the atmospheric correction avoiding users to provide all the required input parameters manually. The module should help users in preparing data to use as input for i.sentinel.mask. In fact, it makes expecially the atmospheric correction procedure easier and faster because it allows performing atmospheric correction of all bands of a Sentinel 2 scene with a single process and it retrieves most of the required input parameters from the image itself. Moreover, one of the possible output of i.sentinel.preproc is a text file to be used as input for i.sentinel.mask.
 
-More information about the module can be found here, ![i.sentinel.preproc.html](i.sentinel.preproc.html).
+More information about the module can be found here, ![i.sentinel.preproc.html].
 
 i.sentinel.preproc is a real complete GRASS GIS addon module (with GUI and manual page) and it can be easyly installed from this GitHub repository within GRASS GIS using the module g.extension:
 
