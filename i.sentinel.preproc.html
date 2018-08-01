@@ -19,7 +19,7 @@ If the <b>-t</b> flag is checked, a text file ready to be used as input for <a h
 <br><br>
 NOTE: as for i.atcorr, current region settings are ignored. The region is temporary set to maximum image extent and restored at the end of the process.
 <br><br>
-<em><b>Important</b></em>: i.sentinel.preproc requires all the bands of a Sentinel 2 images. If the module is used only for the atmospheric correction, all bands from *_B01 to *_B12 must be imported.<br>Moreover, the original bands name has to be kept unchanged (e.g if the original name is <em>T17SPV_20180504T155911_B02</em> the imported raster map in the GIS DATABSE must be named <em>T17SPV_20180504T155911_B02</em>).
+<em><b>Important</b></em>: i.sentinel.preproc requires all the bands of a Sentinel 2 images. If the module is used only for the atmospheric correction, all bands from *_B01 to *_B12 must be imported.<br>Moreover, the original bands name has to be kept unchanged (e.g if the original name is <em>T17SPV_20180315T160021_B02</em> the imported raster map in the GIS DATABSE must be named <em>T17SPV_20180315T160021_B02</em>).
 <br><br>
 <h3>Import</h3>
 <p>
@@ -42,7 +42,7 @@ i.sentinel.preproc allows performing atmospheric correction of all bands of a Se
 	<li><b>suffix</b> = a suffix for the output maps name
 	<li><b>rescale</b> = the output range of values for the corrected bands, for example: 0-255, 0-1, 1-10000 (default value 0-1).
 </ul>
-<br><br>
+<br>
 The module writes the control file automatically starting from the input above.
 
 <h4>Control file</h4>
@@ -88,7 +88,7 @@ Only some options are available:
     <li>Subarctic summer
     <li>Subarctic winter
     <li>Us standard 62
-</ul><br><br>
+</ul><br>
 Users can choose the proper option from a drop-down menu. The desired model is automatically converted to the corresponding code and added to the control file.
 <br><br><em><b>Automatic</b> option</em><br>
 The default option is <em>Automatic</em> which consists in the automatic identification of the proper atmospheric model for the input image. The <em>Automatic</em> option reads the latitude of the center of the computational region and uses it to choose between Midlatitude (15.00 > lat <= 45.00), Tropical (-15.00 > lat <= 15.00) and Subarctic (45.00 > lat <= 60.00) for Northern Hemisphere (obviously it also works for the Southern Hemisphere). Then, the month from the acquisition date is used to distinguish summer or winter in case of Midlatitude or Subarctic model. Once the proper atmospheric model is identified, it is converted to the corresponding code and added to the control file.<br>
@@ -105,7 +105,7 @@ Also in this case, only some options are available and users have to select the 
     <li>shettle model for background desert aerosol	 
     <li>biomass burning	 
     <li>stratospheric model
-</ul><br><br>
+</ul><br>
 No automatic procedure has been implemented in this case.
 <br><br>
 <li><b> Visibility or AOD </b><br>
@@ -120,6 +120,7 @@ To download this kind of file:<br>
 <ol>
 <li>Go to <a href=http://aeronet.gsfc.nasa.gov/cgi-bin/webtool_opera_v2_inv>http://aeronet.gsfc.nasa.gov</a>
 <li>Choose the site you want to get data from
+<li>Choose the data you want to get data for
 <li>Tick the box near the bottom labelled as 'Combined file (all products without phase functions)'
 <li>Choose either Level 1.5 or Level 2.0 data. Level 1.5 data is unscreened, so contains far more data meaning it is more likely for users to find data near your specified time
 <li>Choose 'All Points' under Data Format
@@ -145,45 +146,51 @@ The number of the band changes automatically according to the band that is proce
 
 <h2>EXAMPLE</h2>
 <p>
-The example illustrates how to run i.sentinel.preproc for a Sentinel 2A image (S2A_MSIL1C_20180504T155911_N0206_R097_T17SPV_20180504T194416.SAFE) in the North Carolina location.
+The example illustrates how to run i.sentinel.preproc for a Sentinel 2A image (S2A_MSIL1C_20180315T160021_N0206_R097_T17SPV_20180315T194425.SAFE) in the North Carolina location.<br>
+The AERONET file has been downloaded from the <em>EPA-Res_Triangle_Pk</em> station.
 <div class="code"><pre>
-i.sentinel.preproc -a -t input_dir=/path/S2A_MSIL1C_20180504T155911_N0206_R097_T17SPV_20180504T194416.SAFE elevation=elevation atmospheric_model=Automatic aerosol_model="Continental model" aod_value=0.07 suffix=cor text_file=/path/input_cloud_mask.txt
+i.sentinel.preproc -a -t input_dir=/path/S2A_MSIL1C_20180315T160021_N0206_R097_T17SPV_20180315T194425.SAFE elevation=elevation atmospheric_model=Automatic aerosol_model="Continental model" aeronet_file=path/180301_180331_EPA-Res_Triangle_Pk.dubovik suffix=cor text_file=/path/input_cloud_mask.txt
 <pre></div>
 <p>
 Here is the control file automatically written for Band 02 of the input scene 
 <div class="code"><pre>
 25
-5 4 19.737 -78.727 35.748
-2                           -The Automatic option identified the Midlatitude summer as the proper model for the scene
+5 4 19.74 -78.728 35.749
+3                           -The Automatic option identified the Midlatitude Winter as the proper model for the scene
 1
 0                           -The visibility is set to 0 with AOD in the following line
-0.07
--0.121
+0.18867992317               -AOD computed from the input AERONET file
+-0.122
 -1000
 167
 </pre></div>
 Here is the output text file ready to be used as input for i.sentinel.mask (-t flag)
 <div class="code"><pre>
-blue=T17SPV_20180504T155911_B02_cor
-green=T17SPV_20180504T155911_B03_cor
-red=T17SPV_20180504T155911_B04_cor
-swir11=T17SPV_20180504T155911_B11_cor
-nir=T17SPV_20180504T155911_B08_cor
-swir12=T17SPV_20180504T155911_B12_cor
-nir8a=T17SPV_20180504T155911_B8A_cor
+blue=T17SPV_20180315T160021_B02_cor
+green=T17SPV_20180315T160021_B03_cor
+red=T17SPV_20180315T160021_B04_cor
+swir11=T17SPV_20180315T160021_B11_cor
+nir=T17SPV_20180315T160021_B08_cor
+swir12=T17SPV_20180315T160021_B12_cor
+nir8a=T17SPV_20180315T160021_B8A_cor
 </pre></div>
-
+<br>
 <div align="center" style="margin: 10px">
 <a href="i_sentinel_preproc_ES.png">
-<img src="i_sentinel_preproc_ES.png" width="1126" height="906" alt="i.atcorr example" border="0">
-</a><br>
+<img src="i_sentinel_preproc_ES.png" width="538" height="444" alt="i.atcorr example" border="0">
+</a><br><br>
 <i>Figure: Sentinel-2A Band 02</i>
-</div>
+</div><br>
+
+<h2>REQUIREMENTS</h2>
+<ul>
+<li><a href="i.sentinel.import.html">i.sentinel.import</a>
+</ul>
 
 <h2>IMPORTANT NOTES</h2>
 <ul>
 <li>i.sentinel.preproc integrates a simplyfied version of both modules (i.sentinel.import and i.atcorr), only some options are available. For instance, if it's necessary a strong customization (e.g. definition of your own atmospheric or aerosol model), please refer to i.atcorr.<br><br>
-<li>At the moment i.sentinel.preproc works <b>only</b> with the Level-1C Single Tile product which name follows the New Compact Naming Convention: MMM_MSIL1C_YYYYMMDDTHHMMSS_Nxxyy_Rooo_ProductDiscriminator.SAFE (e.g. S2A_MSIL1C_20170527T102031_N0205_R065_T32TMQ_20170527T102301.SAFE). This convention was introducd by the begining of December 2016 (see <a href="https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/naming-convention">ESA Sentinel User Guide</a> for further information)
+<li>At the moment i.sentinel.preproc works <b>only</b> with the Level-1C Single Tile products whose names follow the New Compact Naming Convention: MMM_MSIL1C_YYYYMMDDTHHMMSS_Nxxyy_Rooo_ProductDiscriminator.SAFE (e.g. S2A_MSIL1C_20170527T102031_N0205_R065_T32TMQ_20170527T102301.SAFE). This convention was introducd by the begining of December 2016 (see <a href="https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/naming-convention">ESA Sentinel User Guide</a> for further information)
 </ul>
 
 <h2>FOLLOW UP</h2>
