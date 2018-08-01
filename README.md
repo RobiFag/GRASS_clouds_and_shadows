@@ -16,13 +16,14 @@ It can be easyly installed within GRASS GIS using the module g.extension:
 <b>The resulting clouds and shadows maps obtained running i.sentinel.mask.</b>
 ![i_sentinel_mask_ES](i.sentinel.mask/i_sentinel_mask_ES.png)
 
-To run i.sentinel.mask, the bands of the desired Sentinel 2 images have to be imported and the atmospheric correction has to be applied.<br>
-In order to make tha data preparation easier, another GRASS GIS addon module has been developend within the GSoC project.
+To run i.sentinel.mask, the bands of the desired Sentinel 2 images have to be imported and the atmospheric correction has to be applied.
 
-i.sentinel.preproc is a module for the preprocessing of Sentinel 2 images (Level-1C Single Tile product) which wraps the import and the atmospheric correction using respectively two existing GRASS GIS modules, i.sentinel.import and i.atcorr.<br>
-The aim is to provide a simplified module which allows importing images and performing the atmospheric correction avoiding users to provide all the required input parameters manually. The module should help users in preparing data to use as input for i.sentinel.mask. In fact, it makes expecially the atmospheric correction procedure easier and faster because it allows performing atmospheric correction of all bands of a Sentinel 2 scene with a single process and it retrieves most of the required input parameters from the image itself. Moreover, one of the possible output of i.sentinel.preproc is a text file to be used as input for i.sentinel.mask.
+In order to make the data preparation easier, another GRASS GIS addon module has been developed within the GSoC project.
 
-More information about the module can be found here, [i.sentinel.preproc.html](i.sentinel.preproc.html) at the moment.
+<b>i.sentinel.preproc</b> is a module for the preprocessing of Sentinel 2 images (Level-1C Single Tile product) which wraps the import and the atmospheric correction using respectively two existing GRASS GIS modules, i.sentinel.import and i.atcorr.<br>
+The aim is to provide a simplified module which allows importing images and performing the atmospheric correction avoiding users to provide all the required input parameters manually. The module should help users in preparing data to use as input for i.sentinel.mask. In fact, it makes especially the atmospheric correction procedure easier and faster because it allows performing atmospheric correction of all bands of a Sentinel 2 scene with a single process and it retrieves most of the required input parameters from the image itself. Moreover, one of the possible output of i.sentinel.preproc is a text file to be used as input for i.sentinel.mask.
+
+More information about the module can be found [i.sentinel.preproc.html](here) at the moment.
 
 i.sentinel.preproc is a real complete GRASS GIS addon module (with GUI and manual page) and it can be easyly installed from this GitHub repository within GRASS GIS using the module g.extension:
 
@@ -32,8 +33,8 @@ It will be soon available on the official GRASS GIS SVN repository!
 
 NOTE: the starting idea was to create a single module which wrapped all the functionalities provided by i.sentinel.mask and i.sentinel.preproc but, following the suggestions of the dev community it was decided to develop two different modules.
 
-N.B.All the file concerning i.sentinel.mask have been moved to a subfolder in the GitHub repository in order to make available the new module i.sentinel.preproc from Github using the GRASS GIS module g.extension.
-If you want to install i.sentinel.mask you have to use the the official GRASS GIS SVN repository because g.extension for GitHub repository download currently support only module (Makefile) at the top level.
+N.B.All the files concerning i.sentinel.mask have been moved to a subfolder in the GitHub repository in order to make available the new module i.sentinel.preproc from Github using the GRASS GIS module g.extension.
+If you want to install i.sentinel.mask you have to use the official GRASS GIS SVN repository because g.extension for GitHub repository download currently support only module (Makefile) at the top level.
 
 
 
