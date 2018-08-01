@@ -82,7 +82,7 @@
 #% key: aeronet_file
 #% type: string
 #% gisprompt: old,file,file
-#% description: Name of the AERONET file for computing AOT at 550nm
+#% description: Name of the AERONET file for computing AOD at 550nm
 #% required : no
 #% multiple: no
 #% guisection: 6S Parameters
@@ -113,7 +113,7 @@
 #%end
 #%flag
 #% key: a
-#% description: Use AOT instead visibility
+#% description: Use AOD instead visibility
 #% guisection: 6S Parameters
 #%end
 #%flag
@@ -272,9 +272,9 @@ def main ():
         if vis!='':
             if options['aod_value']!='' and aeronet_file!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
-                gscript.fatal('Only one parameter must be provided, AOT value or AERONET file')
+                gscript.fatal('Only one parameter must be provided, AOD value or AERONET file')
             elif options['aod_value']=='' and aeronet_file=='':
-                gscript.fatal('if -a flag is checked an AOT value or AERONET file must be provided')
+                gscript.fatal('if -a flag is checked an AOD value or AERONET file must be provided')
             elif options['aod_value']!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
                 check_value = 1
@@ -282,24 +282,24 @@ def main ():
             elif aeronet_file!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
         elif options['aod_value']!='' and aeronet_file!='':
-            gscript.fatal('Only one parameter must be provided, AOT value or AERONET file')
+            gscript.fatal('Only one parameter must be provided, AOD value or AERONET file')
         elif options['aod_value']!='':
             check_value = 1
             aot550 = options['aod_value']
         elif aeronet_file!='':
-            gscript.warning(_('--- Visibility map will be ignored ---'))
+            gscript.message(_('--- Computing AOD from input AERONET file ---'))
         elif options['aod_value']=='' and aeronet_file=='':
-            gscript.fatal('if -a flag is checked an AOT value or AERONET file must be provided')
+            gscript.fatal('if -a flag is checked an AOD value or AERONET file must be provided')
     else:
         if vis!='':
             if options['aod_value']!='' or aeronet_file!='':
-                gscript.warning(_('--- AOT will be ignored ---'))
+                gscript.warning(_('--- AOD will be ignored ---'))
             check_file = 1
             stats_v = gscript.parse_command('r.univar', flags='g', map=vis)
             vis_mean = int(float(stats_v['mean']))
             gscript.message(_('--- Computed visibility mean value: {} Km ---'.format(vis_mean)))
         elif vis=='' and (options['aod_value']!='' or aeronet_file!=''):
-            gscript.fatal('Check the -a flag to use AOT instead of visibility')
+            gscript.fatal('Check the -a flag to use AOD instead of visibility')
         else:
             gscript.fatal('No visibility map has been provided')  
 
@@ -308,7 +308,7 @@ def main ():
     lon = (float(c_region['ll_clon']))
     lat = (float(c_region['ll_clat']))
 
-    ### read and compute AOT from AERONET file ###
+    ### read and compute AOD from AERONET file ###
     if check_value == 0 and check_file == 0:
         i=0
         cc=0 
@@ -390,7 +390,7 @@ def main ():
         ### compute AOD at 550 nm
         alpha = math.log(aot_lower/aot_upper)/math.log(wl_upper/wl_lower)
         aot550 = math.exp(math.log(aot_lower) - math.log(550.0/wl_lower)*alpha)
-        gscript.message(_('--- Computed AOT at 550 nm: {} ---'.format(aot550)))
+        gscript.message(_('--- Computed AOD at 550 nm: {} ---'.format(aot550)))
 
     ### compute mean target elevation in km ###
     stats_d = gscript.parse_command('r.univar', flags='g', map=dem)
@@ -410,7 +410,7 @@ def main ():
             text.write(str(26) + "\n")
         else: 
             gscript.fatal('The input image does not seem to be a Sentinel image')
-        text.write('{} {} {} {} {}'.format(time_py.month, time_py.day, dec_hour, lon, lat) + "\n")
+        text.write('{} {} {:.2f} {:.3f} {:.3f}'.format(time_py.month, time_py.day, dec_hour, lon, lat) + "\n")
         #Atmospheric model
         winter = [1, 2, 3, 4, 10, 11, 12]
         summer = [5, 6, 7, 8, 9]
@@ -468,27 +468,27 @@ def main ():
             text.write('5' + "\n") #aerosol model
         elif aerosol_mod == 'Stratospheric model':
             text.write('6' + "\n") #aerosol model
-        #Visibility and/or AOT
+        #Visibility and/or AOD
         if not flags["a"] and vis != '':
             text.write('{}'.format(vis_mean) + "\n")
             #if aot550 != '' and aod_value != '':
-                #gscript.warning(_("AOT input will be ignored"))
+                #gscript.warning(_("AOD input will be ignored"))
         elif flags["a"] and vis != '':
             if aot550 != 0:
                 text.write('0' + "\n") #visibility
-                text.write('{}'.format(aot550) + "\n") #AOT add script for reading aot from aeronet data
+                text.write('{}'.format(aot550) + "\n") #AOD add script for reading aot from aeronet data
             elif aot550 == 0:
                 text.write('-1' + "\n") #visibility
-                text.write('{}'.format(aot550) + "\n") #AOT add script for reading aot from aeronet data
+                text.write('{}'.format(aot550) + "\n") #AOD add script for reading aot from aeronet data
         elif vis == '' and aot550 != 0:
             text.write('0' + "\n") #visibility
-            text.write('{}'.format(aot550) + "\n") #AOT
+            text.write('{}'.format(aot550) + "\n") #AOD
         elif vis == '' and aot550 == 0:
             text.write('-1' + "\n") #visibility
-            text.write('{}'.format(aot550) + "\n") #AOT
+            text.write('{}'.format(aot550) + "\n") #AOD
         else:
-            gscript.fatal("Unable to retrieve visibility or AOT value, check the input")
-        text.write('{}'.format(dem_mean) + "\n") #mean elevation 
+            gscript.fatal("Unable to retrieve visibility or AOD value, check the input")
+        text.write('{:.3f}'.format(dem_mean) + "\n") #mean elevation 
         text.write('-1000' + "\n") #sensor height
         #Band number
         b = bb.split('_')
