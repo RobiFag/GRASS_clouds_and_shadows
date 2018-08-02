@@ -152,16 +152,29 @@ def main ():
     dem = options['elevation']	
     vis = options['visibility']
     input_dir = options['input_dir']
+    check_ndir = 0
+    check_odir = 0
     #gscript.message(os.path.basename(input_dir))
+    ### check if the input folder has old or new name ###
     ### check if the input folder belongs to a L1C image ###
     level_dir = os.path.basename(input_dir).split('_')
     #gscript.message(level_dir[1])
-    if level_dir[1] != 'MSIL1C':
+    #gscript.message(level_dir[3])
+    if level_dir[1] == 'OPER' and level_dir[3] == 'MSIL1C':
+        check_odir = 1
+        filename = [i for i in os.listdir(input_dir) if i.startswith("S")]
+        string = str(filename).strip("['']")
+        #gscript.message(string)
+        mtd_file = options['input_dir'] + '/' + string
+        #gscript.message(mtd_file)
+    elif level_dir[1] == 'MSIL1C':
+        check_ndir = 1
+        mtd_file = options['input_dir'] + '/MTD_MSIL1C.xml'
+    else:
         gscript.fatal(_("The input directory does not belong to a L1C Sentinel image. Please check the input directory"))
-    mtd_file = options['input_dir'] + '/MTD_MSIL1C.xml'
-    ### check if MTD_MSIL1C.xml exists
+    ### check if Metadata file exists
     if not os.path.isfile(mtd_file):
-        gscript.fatal(_("File MTD_MSIL1C.xml not found. Please check the input directory"))
+        gscript.fatal(_("Metadata file not found. Please check the input directory"))
     atmo_mod = options['atmospheric_model']
     aerosol_mod = options['aerosol_model']
     aeronet_file = options['aeronet_file']
@@ -191,55 +204,115 @@ def main ():
     tree = et.parse(mtd_file)
     root = tree.getroot()
     
+
     ### start reading the xml file ###
-    for elem in root[0].findall('Product_Info'):
-        datatake = elem.find('Datatake')
-        sensor = datatake.find('SPACECRAFT_NAME') #geometrical conditions = sensor 
-        time_str = elem.find('GENERATION_TIME') #acquisition date and time 
-        time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ') #date and time conversion 
-        #gscript.message(_(time_py))
-        dec_hour = float(time_py.hour) + float(time_py.minute)/60 + float(time_py.second)/3600 #compute decimal hour
-        ### read input bands from metadata ###
-        product = elem.find('Product_Organisation')
-        g_list = product.find('Granule_List')
-        granule = g_list.find('Granule')
-        images = granule.find('IMAGE_FILE')
-        img_name = images.text.split('/')
-        ### check if the mtd file corresponds with the input image
-        if gscript.find_file(img_name[3],
-            element = 'cell',
-            mapset = mapset)['file']:
-                for img in root.iter('IMAGE_FILE'):
-                    a = img.text.split('/')
-                    b = a[3].split('_')
-                    if b[2] == 'B01':
-                        bands['costal'] = a[3]
-                    elif b[2] == 'B02':
-                        bands['blue'] = a[3]
-                    elif b[2] == 'B03':
-                        bands['green'] = a[3]
-                    elif b[2] == 'B04':
-                        bands['red'] = a[3]
-                    elif b[2] == 'B05':
-                        bands['re5'] = a[3]
-                    elif b[2] == 'B06':
-                        bands['re6'] = a[3]
-                    elif b[2] == 'B07':
-                        bands['re7'] = a[3]
-                    elif b[2] == 'B08':
-                        bands['nir'] = a[3]
-                    elif b[2] == 'B8A':
-                        bands['nir8a'] = a[3]
-                    elif b[2] == 'B09':
-                        bands['vapour'] = a[3]
-                    elif b[2] == 'B10':
-                        bands['cirrus'] = a[3]
-                    elif b[2] == 'B11':
-                        bands['swir11'] = a[3]
-                    elif b[2] == 'B12':
-                        bands['swir12'] = a[3]
-        else:
-            gscript.fatal(("The metadata file seems to belong to an unexpected image ({}).\n Check the input directory or import the corresponding bands").format(img_name[3].replace('_B01','')))
+    if check_ndir == 1:
+        for elem in root[0].findall('Product_Info'):
+            datatake = elem.find('Datatake')
+            sensor = datatake.find('SPACECRAFT_NAME') #geometrical conditions = sensor 
+            time_str = elem.find('GENERATION_TIME') #acquisition date and time 
+            time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ') #date and time conversion 
+            #gscript.message(_(time_py))
+            dec_hour = float(time_py.hour) + float(time_py.minute)/60 + float(time_py.second)/3600 #compute decimal hour
+            ### read input bands from metadata ###
+            product = elem.find('Product_Organisation')
+            g_list = product.find('Granule_List')
+            granule = g_list.find('Granule')
+            images = granule.find('IMAGE_FILE')
+            img_name = images.text.split('/')
+            ### check if the mtd file corresponds with the input image
+            if gscript.find_file(img_name[3],
+                element = 'cell',
+                mapset = mapset)['file']:
+                    for img in root.iter('IMAGE_FILE'):
+                        a = img.text.split('/')
+                        b = a[3].split('_')
+                        if b[2] == 'B01':
+                            bands['costal'] = a[3]
+                        elif b[2] == 'B02':
+                            bands['blue'] = a[3]
+                        elif b[2] == 'B03':
+                            bands['green'] = a[3]
+                        elif b[2] == 'B04':
+                            bands['red'] = a[3]
+                        elif b[2] == 'B05':
+                            bands['re5'] = a[3]
+                        elif b[2] == 'B06':
+                            bands['re6'] = a[3]
+                        elif b[2] == 'B07':
+                            bands['re7'] = a[3]
+                        elif b[2] == 'B08':
+                            bands['nir'] = a[3]
+                        elif b[2] == 'B8A':
+                            bands['nir8a'] = a[3]
+                        elif b[2] == 'B09':
+                            bands['vapour'] = a[3]
+                        elif b[2] == 'B10':
+                            bands['cirrus'] = a[3]
+                        elif b[2] == 'B11':
+                            bands['swir11'] = a[3]
+                        elif b[2] == 'B12':
+                            bands['swir12'] = a[3]
+            else:
+                gscript.fatal(("The metadata file seems to belong to an unexpected image ({}).\n Check the input directory or import the corresponding bands").format(img_name[3].replace('_B01','')))
+                #gscript.message(_(bands.values()))
+
+    if check_odir == 1:
+        #gscript.message("la cartella ha la vecchia nomenclatura") 
+        for elem in root[0].findall('Product_Info'):
+            datatake = elem.find('Datatake')
+            sensor = datatake.find('SPACECRAFT_NAME') #geometrical conditions = sensor 
+            time_str = elem.find('GENERATION_TIME') #acquisition date and time 
+            time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ') #date and time conversion 
+            #gscript.message(_(time_py))
+            dec_hour = float(time_py.hour) + float(time_py.minute)/60 + float(time_py.second)/3600 #compute decimal hour
+            ### read input bands from metadata ###
+            product = elem.find('Product_Organisation')
+            g_list = product.find('Granule_List')
+            granule = g_list.find('Granules')
+            images = granule.find('IMAGE_ID')
+            #gscript.message(images.text)
+            #img_name = images.text.split('/')
+            ### check if the mtd file corresponds with the input image
+            if gscript.find_file(images.text,
+                element = 'cell',
+                mapset = mapset)['file']:
+                    for img in root.iter('IMAGE_ID'):
+                        b = img.text.split('_')
+                        #gscript.message(b[10])
+                        #gscript.message(img.text)
+                        if b[10] == 'B01':
+                            bands['costal'] = img.text
+                        elif b[10] == 'B02':
+                            bands['blue'] = img.text
+                        elif b[10] == 'B03':
+                            bands['green'] = img.text
+                        elif b[10] == 'B04':
+                            bands['red'] = img.text
+                        elif b[10] == 'B05':
+                            bands['re5'] = img.text
+                        elif b[10] == 'B06':
+                            bands['re6'] = img.text
+                        elif b[10] == 'B07':
+                            bands['re7'] = img.text
+                        elif b[10] == 'B08':
+                            bands['nir'] = img.text
+                        elif b[10] == 'B8A':
+                            bands['nir8a'] = img.text
+                        elif b[10] == 'B09':
+                            bands['vapour'] = img.text
+                        elif b[10] == 'B10':
+                            bands['cirrus'] = img.text
+                        elif b[10] == 'B11':
+                            bands['swir11'] = img.text
+                        elif b[10] == 'B12':
+                            bands['swir12'] = img.text
+            else:
+                gscript.fatal(("The metadata file seems to belong to an unexpected image ({}).\n Check the input directory or import the corresponding bands").format(images.text.replace('_B09','')))
+                #gscript.message(_(bands.values()))
+    
+    #else:
+        #gscript.fatal(("The input metadata file does not seem to be the right one. Select the MTD_MSIL1C.xml"))
 
     ###check if input exist
 	for key, value in bands.items():
@@ -492,83 +565,87 @@ def main ():
         text.write('-1000' + "\n") #sensor height
         #Band number
         b = bb.split('_')
-        if b[2] == 'B01' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        if check_ndir == 1:
+            band_n = b[2]
+        else:
+            band_n = b[10]
+        if band_n == 'B01' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('166') #band
-        elif b[2] == 'B02' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B02' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('167') #band
-        elif b[2] == 'B03' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B03' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('168') #band
-        elif b[2] == 'B04' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B04' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('169') #band
-        elif b[2] == 'B05' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B05' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('170') #band
-        elif b[2] == 'B06' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B06' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('171') #band
-        elif b[2] == 'B07' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B07' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('172') #band
-        elif b[2] == 'B08' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B08' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('173') #band
-        elif b[2] == 'B8A' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B8A' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('174') #band
-        elif b[2] == 'B09' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B09' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('175') #band
-        elif b[2] == 'B10' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B10' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('176') #band
-        elif b[2] == 'B11' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B11' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('177') #band
-        elif b[2] == 'B12' and sensor.text == 'Sentinel-2A':
-            gscript.message(_(b[2]))
+        elif band_n == 'B12' and sensor.text == 'Sentinel-2A':
+            gscript.message(_(band_n))
             text.write('178') #band
-        elif b[2] == 'B01' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B01' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('179') #band
-        elif b[2] == 'B02' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B02' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('180') #band
-        elif b[2] == 'B03' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B03' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('181') #band
-        elif b[2] == 'B04' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B04' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('182') #band
-        elif b[2] == 'B05' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B05' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('183') #band
-        elif b[2] == 'B06' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B06' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('184') #band
-        elif b[2] == 'B07' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B07' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('185') #band
-        elif b[2] == 'B08' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B08' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('186') #band
-        elif b[2] == 'B8A' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B8A' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('187') #band
-        elif b[2] == 'B09' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B09' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('188') #band
-        elif b[2] == 'B10' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B10' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('189') #band
-        elif b[2] == 'B11' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B11' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('190') #band
-        elif b[2] == 'B12' and sensor.text == 'Sentinel-2B':
-            gscript.message(_(b[2]))
+        elif band_n == 'B12' and sensor.text == 'Sentinel-2B':
+            gscript.message(_(band_n))
             text.write('191') #band
         else:
             gscript.fatal('Bands do not seem to belong to a Sentinel image')
