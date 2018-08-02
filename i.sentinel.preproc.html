@@ -5,7 +5,7 @@ i.sentinel.preproc is a module for the preprocessing of Sentinel 2 images (Level
 It works both with Sentinel 2A and 2B images.<br>
 The aim is to provide a simplified module which allows importing images, which area downloaded using <a href="i.sentinel.download.html">i.sentinel.download</a> or any other sources, and performing the atmospheric correction avoiding users to provide all the required input parameters manually. In fact, regarding the atmospheric correction performed with i.atcorr one of the most challenging steps, especially for unexperienced users, is the compiling of the control file with all the required parameters to parametrize the 6S (<em>Second Simulation of Satellite Signal in the Solar Spectrum</em>) model on which i.atcorr is based.<br><br> 
 To run i.atcorr, users have to provide the so-called control file in which all the parameters (geometrical conditions, date, time, longitude and latitude of the center of the scene, atmospheric model, aerosol model, visibility or Aerosol Optical Depth -AOD- value, mean elevation target and bands number) have to be specified with precise syntax rules and codes.<br>
-i.sentinel.preproc retrieves as many parameters as possible from the MTD_MSIL1C.xml metadata file (e.g. Geometrical conditions, data and time and bands number), longitude and latitude are automatically computed from the computational region while others like the mean target elevation above sea level from the input digital elevation model (DEM). Only a few parameters have to be provided by users who can choose the proper option from a drop-down menu thus avoiding to enter the corresponding code. In any case, i.sentinel.preproc writes a temporary control file, changing it according to the band number, following the syntax rules and codes of i.atcorr and then it runs i.atcorr for all bands.<br><br>
+i.sentinel.preproc retrieves as many parameters as possible from the metadata file (e.g. Geometrical conditions, data and time and bands number), longitude and latitude are automatically computed from the computational region while others like the mean target elevation above sea level from the input digital elevation model (DEM). Only a few parameters have to be provided by users who can choose the proper option from a drop-down menu thus avoiding to enter the corresponding code. In any case, i.sentinel.preproc writes a temporary control file, changing it according to the band number, following the syntax rules and codes of i.atcorr and then it runs i.atcorr for all bands.<br><br>
 <br><br>
 <center>
 <img src="i_sentinel_preproc_GWF.png" width="30%">
@@ -26,15 +26,15 @@ NOTE: as for i.atcorr, current region settings are ignored. The region is tempor
 i.sentinel.preproc allows the import of all the bands of a Sentinel 2 image. The required input is the <b>.SAFE folder</b> downloaded using i.sentinel.download or any other source (e.g. Copernicus Open Access Hub). Note that in the case that spatial reference system of input data differs from GRASS location, the input data are reprojected.<br>
 Number of imported bands <b>can not</b> be reduced, all bands are automatically imported by default.<br><br>
 
-<em><b>Important</b></em>: i.sentinel.preproc allows the import of one image at a time because the input .SAFE folder is also used to automatically identify the corresponding MTD_MSIL1C.xml file that is used during the atmospheric correction.<br><br>
+<em><b>Important</b></em>: i.sentinel.preproc allows the import of one image at a time because the input .SAFE folder is also used to automatically identify the corresponding metadata file that is used during the atmospheric correction.<br><br>
 
-The import can be skipped using the <b>-i</b> flag. Note that even if the import is skipped the input .SAFE folder must be specified to automatically retrieve the MTD_MSIL1C.xml file.
+The import can be skipped using the <b>-i</b> flag. Note that even if the import is skipped the input .SAFE folder must be specified to automatically retrieve the metadata file.
 
 <h3>Atmospheric correction</h3>
 <p>
 i.sentinel.preproc allows performing atmospheric correction of all bands of a Sentinel 2 scene with a single process using i.atcorr. Unlike i.atcorr, it writes the control file changing it according to the band number. The only required inputs are:   
 <ul> 
-    <li><b>input_dir</b> = the *.SAFE directory where the image and metadata file are stored, 
+    <li><b>input_dir</b> = the *.SAFE directory where the image and metadata file (MTD_MSIL1C.xml or S2A_OPER_MTD_SAFL1C_PDMC_*.xml depending on naming convention) are stored, 
     <li><b>elevation</b> = raster of a digital elevation model,
     <li><b>visibility or AOD value</b> = raster of a visibility map or an AOD value (<em>see AOD section</em>),
     <li><b>Atmospheric model</b> = to be choosen from the drop-down menu,
@@ -68,11 +68,11 @@ Using i.sentinel.preproc the only parameters from the list above that users have
 <ol>
 <li><b>Geometrical conditions</b>
 <p>
-The geometrical condition of the satellite are read from the MTD_MSIL1C.xml file and converted to the corresponding i.atcorr code, 25 for Sentinel 2A mission and 26 for Sentinel 2B. 
+The geometrical condition of the satellite are read from the metadata file and converted to the corresponding i.atcorr code, 25 for Sentinel 2A mission and 26 for Sentinel 2B. 
 <br><br>
 <li><b> Date, time, longitude and latitude </b>
 <p>
-Date (month and day) and time are read from the MTD_MSIL1C.xml file. The date (with the format YYYY-MM-DDTHH:MM:SSZ) is converted in a standard format and only the month and the day are selected and added to the control file.<br><br>
+Date (month and day) and time are read from the metadata file. The date (with the format YYYY-MM-DDTHH:MM:SSZ) is converted in a standard format and only the month and the day are selected and added to the control file.<br><br>
 Time is already in Greenwich Mean Time (GMT), as i.atcorr requires, and it's automatically converted to decimal hours.<br>
 Longitude and latitude are computed from the computational region and converted to WGS84 decimal coordinates.
 <br><br>
@@ -190,12 +190,11 @@ nir8a=T17SPV_20180315T160021_B8A_cor
 <h2>IMPORTANT NOTES</h2>
 <ul>
 <li>i.sentinel.preproc integrates a simplyfied version of both modules (i.sentinel.import and i.atcorr), only some options are available. For instance, if it's necessary a strong customization (e.g. definition of your own atmospheric or aerosol model), please refer to i.atcorr.<br><br>
-<li>At the moment i.sentinel.preproc works <b>only</b> with the Level-1C Single Tile products whose names follow the New Compact Naming Convention: MMM_MSIL1C_YYYYMMDDTHHMMSS_Nxxyy_Rooo_ProductDiscriminator.SAFE (e.g. S2A_MSIL1C_20170527T102031_N0205_R065_T32TMQ_20170527T102301.SAFE). This convention was introducd by the begining of December 2016 (see <a href="https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/naming-convention">ESA Sentinel User Guide</a> for further information)
+<li>i.sentinel.preproc works with Sentinel 2 images whose names follow both the New Compact Naming Convention (e.g. S2A_MSIL1C_20170527T102031_N0205_R065_T32TMQ_20170527T102301.SAFE) and the Old Format Naming Convention (e.g. S2A_OPER_PRD_MSIL1C_PDMC_20160930T155112_R079_V20160930T095022_20160930T095944.SAFE). For further information about the naming convention see <a href="https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/naming-convention">ESA Sentinel User Guide</a>.
 </ul>
 
 <h2>FOLLOW UP</h2>
 <ul>
-<li>Add support for the Old format Naming Convention (e.g. S2A_OPER_PRD_MSIL1C_PDMC_20160930T155112_R079_V20160930T095022_20160930T095944.SAFE)
 <li>Implement download functionality avoiding dependencies
 <li>Integrate the Topographic Correction
 </ul>
