@@ -34,8 +34,6 @@ This means that all those shadow geometries which do not intersect a cloud geome
 <i>Fig: Module General WorkFlow</i>
 </center-->
 
-NOTE: i.sentinel.mask works for Sentinel 2 images whose names follow both the New Compact Naming Convention (e.g. S2A_MSIL1C_20170527T102031_N0205_R065_T32TMQ_20170527T102301.SAFE) and the Old format Naming Convention (e.g. S2A_OPER_PRD_MSIL1C_PDMC_20160930T155112_R079_V20160930T095022_20160930T095944.SAFE). Therefore, both the MTD_TL.xml and S2A_OPER_MTD_L1C_TL_MPS__*.xml file can be provided as input for the computation of shadow mask. Both files can be found in the <em>GRANULE</em> folder of the downloaded *.SAFE product.
-
 <p>
 The algorithm works on reflectance values (Bottom of Atmosphere Reflectance) therefore, the atmospheric correction has to be applied to all input bands (see <a href="i.sentinel.preproc.html">i.sentinel.preproc</a> or <a href="i.atcorr.html">i.atcorr</a>)
 
@@ -98,6 +96,10 @@ nir8a=T17SPV_20180315T160021_B8A_cor
 </a><br><br>
 <i>Figure1 (left): Sentinel-2A Band 02 - Figure2 (right): Sentinel-2A Band 02 with computed cloud and shadow masks</i>
 </div>
+
+<h2>IMPORTANT NOTES</h2>
+i.sentinel.mask works for Sentinel 2 images whose names follow both the New Compact Naming Convention (e.g. S2A_MSIL1C_20170527T102031_N0205_R065_T32TMQ_20170527T102301.SAFE) and the Old format Naming Convention (e.g. S2A_OPER_PRD_MSIL1C_PDMC_20160930T155112_R079_V20160930T095022_20160930T095944.SAFE). Therefore, both the MTD_TL.xml and S2A_OPER_MTD_L1C_TL_MPS__*.xml file can be provided as input for the computation of shadow mask. Both files can be found in the <em>GRANULE</em> folder of the downloaded *.SAFE product.<br>
+For further information about the naming convention see <a href="https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/naming-convention">ESA Sentinel User Guide</a>.
 
 <h2>REFERENCE</h2>
 <ul>
