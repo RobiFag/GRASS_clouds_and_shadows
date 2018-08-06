@@ -9,7 +9,7 @@ The project creates a specific module for GRASS GIS application (<b>i.sentinel.m
 More information about the algorithm and the module can be found here, <a href="https://grass.osgeo.org/grass74/manuals/addons/i.sentinel.mask.html" target="_blank">i.sentinel.mask</a>.
 
 i.sentinel.mask is a real complete GRASS GIS addon module (with GUI and manual page) and it is now available on the official <a href="https://trac.osgeo.org/grass/browser/grass-addons/grass7/imagery/i.sentinel.mask" target="_blank">GRASS GIS SVN repository</a>.<br>
-It can be easyly installed within GRASS GIS using the module g.extension:
+It can be easily installed within GRASS GIS using the module g.extension:
 
 <em>g.extension extension=i.sentinel.mask operation=add</em>
 
@@ -23,7 +23,7 @@ In order to make the data preparation easier, another GRASS GIS addon module has
 <b>i.sentinel.preproc</b> is a module for the preprocessing of Sentinel 2 images (Level-1C Single Tile product) which wraps the import and the atmospheric correction using respectively two existing GRASS GIS modules, i.sentinel.import and i.atcorr.<br>
 The aim is to provide a simplified module which allows importing images and performing the atmospheric correction avoiding users to provide all the required input parameters manually. The module should help users in preparing data to use as input for i.sentinel.mask. In fact, it makes especially the atmospheric correction procedure easier and faster because it allows performing atmospheric correction of all bands of a Sentinel 2 scene with a single process and it retrieves most of the required input parameters from the image itself. Moreover, one of the possible output of i.sentinel.preproc is a text file to be used as input for i.sentinel.mask.
 
-More information about the module can be found [i.sentinel.preproc.html](here) at the moment.
+More information about the module can be found [here](i.sentinel.preproc.html) at the moment.
 
 i.sentinel.preproc is a real complete GRASS GIS addon module (with GUI and manual page) and it can be easyly installed from this GitHub repository within GRASS GIS using the module g.extension:
 
