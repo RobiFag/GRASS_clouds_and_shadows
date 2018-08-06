@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # coding=utf-8
 #
 ############################################################################
@@ -13,7 +13,7 @@
 #		License (>=v2). Read the file COPYING that comes with GRASS
 #		for details.
 #
-#############################################################################
+############################################################################
 
 #%Module
 #% description: Import and perform atmospheric correction for Sentinel-2 images
@@ -154,27 +154,24 @@ def main ():
     input_dir = options['input_dir']
     check_ndir = 0
     check_odir = 0
-    #gscript.message(os.path.basename(input_dir))
-    ### check if the input folder has old or new name ###
-    ### check if the input folder belongs to a L1C image ###
+    # Check if the input folder has old or new name
+    # Check if the input folder belongs to a L1C image
     level_dir = os.path.basename(input_dir).split('_')
-    #gscript.message(level_dir[1])
-    #gscript.message(level_dir[3])
     if level_dir[1] == 'OPER' and level_dir[3] == 'MSIL1C':
         check_odir = 1
         filename = [i for i in os.listdir(input_dir) if i.startswith("S")]
         string = str(filename).strip("['']")
-        #gscript.message(string)
         mtd_file = options['input_dir'] + '/' + string
-        #gscript.message(mtd_file)
     elif level_dir[1] == 'MSIL1C':
         check_ndir = 1
         mtd_file = options['input_dir'] + '/MTD_MSIL1C.xml'
     else:
-        gscript.fatal(_("The input directory does not belong to a L1C Sentinel image. Please check the input directory"))
-    ### check if Metadata file exists
+        gscript.fatal('The input directory does not belong to a \
+            L1C Sentinel image. Please check the input directory')
+    # Check if Metadata file exists
     if not os.path.isfile(mtd_file):
-        gscript.fatal(_("Metadata file not found. Please check the input directory"))
+        gscript.fatal('Metadata file not found. \
+            Please check the input directory')
     atmo_mod = options['atmospheric_model']
     aerosol_mod = options['aerosol_model']
     aeronet_file = options['aeronet_file']
@@ -187,7 +184,7 @@ def main ():
     txt_file = options['text_file']
     tmp_file = gscript.tempfile()
 
-    ### import bands ###
+    # Import bands
     if not flags["i"]:
         try:
             if flags["r"]:
@@ -198,29 +195,34 @@ def main ():
                 gscript.run_command('i.sentinel.import',
                     input=options['input_dir'])
         except:
-            gscript.fatal(("Module rquire i.sentinel.import. Please install it using g.extension."))
+            gscript.fatal('Module rquire i.sentinel.import.\
+                Please install it using g.extension.')
 
-    ### create xml "tree" for reading parameters from metadata ###
+    # Create xml "tree" for reading parameters from metadata
     tree = et.parse(mtd_file)
     root = tree.getroot()
     
-
-    ### start reading the xml file ###
+    # Start reading the xml file
     if check_ndir == 1:
         for elem in root[0].findall('Product_Info'):
             datatake = elem.find('Datatake')
-            sensor = datatake.find('SPACECRAFT_NAME') #geometrical conditions = sensor 
-            time_str = elem.find('GENERATION_TIME') #acquisition date and time 
-            time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ') #date and time conversion 
-            #gscript.message(_(time_py))
-            dec_hour = float(time_py.hour) + float(time_py.minute)/60 + float(time_py.second)/3600 #compute decimal hour
-            ### read input bands from metadata ###
+            # Geometrical conditions = sensor
+            sensor = datatake.find('SPACECRAFT_NAME')
+            # Acquisition date and time
+            time_str = elem.find('GENERATION_TIME')
+            # Date and time conversion
+            time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ')
+            # Compute decimal hour
+            dec_hour = (float(time_py.hour)
+                + float(time_py.minute)/60
+                + float(time_py.second)/3600)
+            # Read input bands from metadata
             product = elem.find('Product_Organisation')
             g_list = product.find('Granule_List')
             granule = g_list.find('Granule')
             images = granule.find('IMAGE_FILE')
             img_name = images.text.split('/')
-            ### check if the mtd file corresponds with the input image
+            # Check if the mtd file corresponds with the input image
             if gscript.find_file(img_name[3],
                 element = 'cell',
                 mapset = mapset)['file']:
@@ -254,100 +256,106 @@ def main ():
                         elif b[2] == 'B12':
                             bands['swir12'] = a[3]
             else:
-                gscript.fatal(("The metadata file seems to belong to an unexpected image ({}).\n Check the input directory or import the corresponding bands").format(img_name[3].replace('_B01','')))
-                #gscript.message(_(bands.values()))
+                gscript.fatal(('The metadata file seems to belong to an \
+                    unexpected image ({}).\n Check the input directory or \
+                    import the corresponding bands').format(
+                        img_name[3].replace('_B01','')))
 
     if check_odir == 1:
-        #gscript.message("la cartella ha la vecchia nomenclatura") 
         for elem in root[0].findall('Product_Info'):
             datatake = elem.find('Datatake')
-            sensor = datatake.find('SPACECRAFT_NAME') #geometrical conditions = sensor 
-            time_str = elem.find('GENERATION_TIME') #acquisition date and time 
-            time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ') #date and time conversion 
-            #gscript.message(_(time_py))
-            dec_hour = float(time_py.hour) + float(time_py.minute)/60 + float(time_py.second)/3600 #compute decimal hour
-            ### read input bands from metadata ###
+            # Geometrical conditions = sensor
+            sensor = datatake.find('SPACECRAFT_NAME')
+            # Acquisition date and time
+            time_str = elem.find('GENERATION_TIME')
+            # Date and time conversion
+            time_py = datetime.strptime(time_str.text,'%Y-%m-%dT%H:%M:%S.%fZ')
+            # Compute decimal hour
+            dec_hour = (float(time_py.hour)
+                + float(time_py.minute)/60
+                + float(time_py.second)/3600)
+            # Read input bands from metadata
             product = elem.find('Product_Organisation')
             g_list = product.find('Granule_List')
             granule = g_list.find('Granules')
             images = granule.find('IMAGE_ID')
-            #gscript.message(images.text)
-            #img_name = images.text.split('/')
-            ### check if the mtd file corresponds with the input image
+            # Check if the mtd file corresponds with the input image
             if gscript.find_file(images.text,
                 element = 'cell',
                 mapset = mapset)['file']:
-                    for img in root.iter('IMAGE_ID'):
-                        b = img.text.split('_')
-                        #gscript.message(b[10])
-                        #gscript.message(img.text)
-                        if b[10] == 'B01':
-                            bands['costal'] = img.text
-                        elif b[10] == 'B02':
-                            bands['blue'] = img.text
-                        elif b[10] == 'B03':
-                            bands['green'] = img.text
-                        elif b[10] == 'B04':
-                            bands['red'] = img.text
-                        elif b[10] == 'B05':
-                            bands['re5'] = img.text
-                        elif b[10] == 'B06':
-                            bands['re6'] = img.text
-                        elif b[10] == 'B07':
-                            bands['re7'] = img.text
-                        elif b[10] == 'B08':
-                            bands['nir'] = img.text
-                        elif b[10] == 'B8A':
-                            bands['nir8a'] = img.text
-                        elif b[10] == 'B09':
-                            bands['vapour'] = img.text
-                        elif b[10] == 'B10':
-                            bands['cirrus'] = img.text
-                        elif b[10] == 'B11':
-                            bands['swir11'] = img.text
-                        elif b[10] == 'B12':
-                            bands['swir12'] = img.text
+                for img in root.iter('IMAGE_ID'):
+                    b = img.text.split('_')
+                    if b[10] == 'B01':
+                        bands['costal'] = img.text
+                    elif b[10] == 'B02':
+                        bands['blue'] = img.text
+                    elif b[10] == 'B03':
+                        bands['green'] = img.text
+                    elif b[10] == 'B04':
+                        bands['red'] = img.text
+                    elif b[10] == 'B05':
+                        bands['re5'] = img.text
+                    elif b[10] == 'B06':
+                        bands['re6'] = img.text
+                    elif b[10] == 'B07':
+                        bands['re7'] = img.text
+                    elif b[10] == 'B08':
+                        bands['nir'] = img.text
+                    elif b[10] == 'B8A':
+                        bands['nir8a'] = img.text
+                    elif b[10] == 'B09':
+                        bands['vapour'] = img.text
+                    elif b[10] == 'B10':
+                        bands['cirrus'] = img.text
+                    elif b[10] == 'B11':
+                        bands['swir11'] = img.text
+                    elif b[10] == 'B12':
+                        bands['swir12'] = img.text
             else:
-                gscript.fatal(("The metadata file seems to belong to an unexpected image ({}).\n Check the input directory or import the corresponding bands").format(images.text.replace('_B09','')))
-                #gscript.message(_(bands.values()))
-    
-    #else:
-        #gscript.fatal(("The input metadata file does not seem to be the right one. Select the MTD_MSIL1C.xml"))
+                gscript.fatal(('The metadata file seems to belong to an \
+                    unexpected image ({}).\n Check the input directory or \
+                    import the corresponding bands').format(
+                        images.text.replace('_B09','')))
 
-    ###check if input exist
+    # Check if input exist
 	for key, value in bands.items():
 		if not gscript.find_file(value,
 			element = 'cell',
 			mapset = mapset)['file']:
-				gscript.fatal(("Raster map <{}> not found.").format(value))
+			gscript.fatal(('Raster map <{}> not found.').format(value))
 
-    ###check if output already exist
+    # Check if output already exist
     for key, value in bands.items():
         if not os.getenv('GRASS_OVERWRITE'):
-            if gscript.find_file(value + '_' + suffix, 
-                element = 'cell', 
+            if gscript.find_file(value + '_' + suffix,
+                element = 'cell',
                 mapset = mapset)['file']:
-                    gscript.fatal(("Raster map {} already exists.").format(value + '_' + suffix))
+                gscript.fatal(('Raster map {} already exists.').format(
+                    value + '_' + suffix))
 
-    ###check if output name for the text file has been specified
+    # Check if output name for the text file has been specified
     if flags["t"]:
         if options['text_file'] == '':
-            gscript.fatal("Output name is required for the text file. Please specified it")
+            gscript.fatal('Output name is required for the text file. \
+                Please specified it')
 
-    ### set temp region to image max extent
+    # Set temp region to image max extent
     gscript.use_temp_region()
     gscript.run_command('g.region',
         rast=bands.values(),
         flags='a')
-    gscript.message(_("--- The computational region has been temporarily set to image max extent ---"))
+    gscript.message(_("--- The computational region has been temporarily set \
+        to image max extent ---"))
 
     if flags["a"]:
         if vis!='':
             if options['aod_value']!='' and aeronet_file!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
-                gscript.fatal('Only one parameter must be provided, AOD value or AERONET file')
+                gscript.fatal('Only one parameter must be provided, \
+                    AOD value or AERONET file')
             elif options['aod_value']=='' and aeronet_file=='':
-                gscript.fatal('if -a flag is checked an AOD value or AERONET file must be provided')
+                gscript.fatal('If -a flag is checked an AOD value or \
+                    AERONET file must be provided')
             elif options['aod_value']!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
                 check_value = 1
@@ -355,14 +363,16 @@ def main ():
             elif aeronet_file!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
         elif options['aod_value']!='' and aeronet_file!='':
-            gscript.fatal('Only one parameter must be provided, AOD value or AERONET file')
+            gscript.fatal('Only one parameter must be provided, AOD value or \
+                AERONET file')
         elif options['aod_value']!='':
             check_value = 1
             aot550 = options['aod_value']
         elif aeronet_file!='':
             gscript.message(_('--- Computing AOD from input AERONET file ---'))
         elif options['aod_value']=='' and aeronet_file=='':
-            gscript.fatal('if -a flag is checked an AOD value or AERONET file must be provided')
+            gscript.fatal('If -a flag is checked an AOD value or \
+                AERONET file must be provided')
     else:
         if vis!='':
             if options['aod_value']!='' or aeronet_file!='':
@@ -370,21 +380,22 @@ def main ():
             check_file = 1
             stats_v = gscript.parse_command('r.univar', flags='g', map=vis)
             vis_mean = int(float(stats_v['mean']))
-            gscript.message(_('--- Computed visibility mean value: {} Km ---'.format(vis_mean)))
+            gscript.message(_('--- Computed visibility mean value: \
+                {} Km ---'.format(vis_mean)))
         elif vis=='' and (options['aod_value']!='' or aeronet_file!=''):
             gscript.fatal('Check the -a flag to use AOD instead of visibility')
         else:
-            gscript.fatal('No visibility map has been provided')  
+            gscript.fatal('No visibility map has been provided')
 
-    ### retrieve longitude and latitude of the centre of the computational region ###
+    # Retrieve longitude and latitude of the centre of the computational region
     c_region = gscript.parse_command('g.region', flags='bg')
     lon = (float(c_region['ll_clon']))
     lat = (float(c_region['ll_clat']))
 
-    ### read and compute AOD from AERONET file ###
+    # Read and compute AOD from AERONET file
     if check_value == 0 and check_file == 0:
         i=0
-        cc=0 
+        cc=0
         count=0
         columns = []
         m_time = []
@@ -397,7 +408,7 @@ def main ():
             count+=1
             if count==4:
                 columns = row.split(',')
-        ### search for the closest date and time to the acquisition one
+        # Search for the closest date and time to the acquisition one
         count=0
         for row in file(aeronet_file):
             count+=1
@@ -408,14 +419,13 @@ def main ():
         dates = [datetime.strptime(row, '%d:%m:%Y %H:%M:%S') for row in m_time]
         dates_list.append(dates)
         format_bd = time_py.strftime('%d/%m/%Y %H:%M:%S')
-        #gscript.message(_(format_bd))
         base_date = str(format_bd)
         b_d = datetime.strptime(base_date,'%d/%m/%Y %H:%M:%S')
 
         for line in dates_list:
             closest = min(line, key=lambda x: abs(x - b_d))
             timedelta = abs(closest - b_d)
-        ### search for the closest wavelengths (upper and lower) to the given one (550)
+        # Search for the closest wavelengths (upper and lower) to 550
         count=0
         for row in file(aeronet_file):
             count+=1
@@ -430,11 +440,13 @@ def main ():
             wl.append(int(l[1]))
 
         aot_req = 550
-        upper = min([ i for i in wl if i >= aot_req], key=lambda x:abs(x-aot_req))
-        lower = min([ i for i in wl if i < aot_req], key=lambda x:abs(x-aot_req))
+        upper = min([ i for i in wl if i >= aot_req],
+            key=lambda x:abs(x-aot_req))
+        lower = min([ i for i in wl if i < aot_req],
+            key=lambda x:abs(x-aot_req))
 
         count=0
-        for row in file(aeronet_file): 
+        for row in file(aeronet_file):
             count+=1
             if count==dates.index(closest)+5:
                 t_columns = row.split(',')
@@ -442,9 +454,11 @@ def main ():
                 check_up=0
                 check_lo=0
                 while count2<len(i_col) and check_up<1:
-                    if t_columns[wl.index(upper)+i_col[0]]=="N/A": #search for the not null value for the upper wavelength
+                    # Search for the not null value for the upper wavelength
+                    if t_columns[wl.index(upper)+i_col[0]]=="N/A":
                         aot_req_tmp = upper
-                        upper = min([ i for i in wl if i > aot_req_tmp], key=lambda x:abs(x-aot_req_tmp))
+                        upper = min([ i for i in wl if i > aot_req_tmp],
+                            key=lambda x:abs(x-aot_req_tmp))
                     else:
                         wl_upper = float(upper)
                         aot_upper = float(t_columns[wl.index(upper)+i_col[0]])
@@ -452,118 +466,125 @@ def main ():
                     count2+=1
                 count2=0
                 while count2<len(i_col) and check_lo<1:
-                    if t_columns[wl.index(lower)+i_col[0]]=="N/A": #search for the not null value for the lower wavelength
+                    # Search for the not null value for the lower wavelength
+                    if t_columns[wl.index(lower)+i_col[0]]=="N/A":
                         aot_req_tmp = lower
-                        lower = min([ i for i in wl if i < aot_req_tmp], key=lambda x:abs(x-aot_req_tmp))
+                        lower = min([ i for i in wl if i < aot_req_tmp],
+                            key=lambda x:abs(x-aot_req_tmp))
                     else:
                         wl_lower = float(lower)
                         aot_lower = float(t_columns[wl.index(lower)+i_col[0]])
                         check_lo=1
                     count2+=1
-        ### compute AOD at 550 nm
+        # Compute AOD at 550 nm
         alpha = math.log(aot_lower/aot_upper)/math.log(wl_upper/wl_lower)
         aot550 = math.exp(math.log(aot_lower) - math.log(550.0/wl_lower)*alpha)
         gscript.message(_('--- Computed AOD at 550 nm: {} ---'.format(aot550)))
 
-    ### compute mean target elevation in km ###
+    # Compute mean target elevation in km
     stats_d = gscript.parse_command('r.univar', flags='g', map=dem)
     mean = (float(stats_d['mean']))
     conv_fac = -0.001
     dem_mean = mean * conv_fac
-    gscript.message(_('--- Computed mean target elevation above sea level: {:.3f} m ---'.format(mean)))
+    gscript.message(_('--- Computed mean target elevation above sea level: \
+        {:.3f} m ---'.format(mean)))
 
-    ### Start compiling the control file ###
+    # Start compiling the control file
     for key, bb in bands.items():
         gscript.message(_('--- Compiling the control file.. ---'))
         text = open(tmp_file, "w")
-        #Geometrical conditions
+        # Geometrical conditions
         if sensor.text == 'Sentinel-2A':
             text.write(str(25) + "\n")
         elif sensor.text == 'Sentinel-2B':
             text.write(str(26) + "\n")
         else: 
             gscript.fatal('The input image does not seem to be a Sentinel image')
-        text.write('{} {} {:.2f} {:.3f} {:.3f}'.format(time_py.month, time_py.day, dec_hour, lon, lat) + "\n")
-        #Atmospheric model
+        text.write('{} {} {:.2f} {:.3f} {:.3f}'.format(
+            time_py.month,
+            time_py.day,
+            dec_hour,
+            lon,
+            lat) + "\n")
+        # Atmospheric model
         winter = [1, 2, 3, 4, 10, 11, 12]
         summer = [5, 6, 7, 8, 9]
         if atmo_mod == 'Automatic':
-            if lat > -15.00 and lat <= 15.00: #tropical
+            if lat > -15.00 and lat <= 15.00: # Tropical
                 text.write('1' + "\n")
             elif lat > 15.00 and lat <= 45.00:
-                if time_py.month in winter: #midlatitude winter
+                if time_py.month in winter: # Midlatitude winter
                     text.write('3' + "\n")
-                else: #midlatitude summer
+                else: # Midlatitude summer
                     text.write('2' + "\n")
             elif lat > -15.00 and lat <= -45.00: 
-                if time_py.month in winter: #midlatitude summer
+                if time_py.month in winter: # Midlatitude summer
                     text.write('2' + "\n")
-                else: #midlatitude winter
+                else: # Midlatitude winter
                     text.write('3' + "\n")
             elif lat > 45.00 and lat <= 60.00:
-                if time_py.month in winter: #subarctic winter
+                if time_py.month in winter: # Subarctic winter
                     text.write('5' + "\n")
-                else: #subartic summer
+                else: # Subartic summer
                     text.write('4' + "\n")
             elif lat > -45.00 and lat <= -60.00:
-                if time_py.month in winter: #subarctic summer
+                if time_py.month in winter: # Subarctic summer
                     text.write('4' + "\n")
-                else: #subartic winter
+                else: # Subartic winter
                     text.write('5' + "\n")
             else:
                 gscript.fatal('Latitude {} is out of range'.format(lat))
         elif atmo_mod == 'No gaseous absorption':
-            text.write('0' + "\n") #no gas abs model 
+            text.write('0' + "\n") # No gas abs model
         elif atmo_mod == 'Tropical':
-            text.write('1' + "\n") #tropical model
+            text.write('1' + "\n") # Tropical model
         elif atmo_mod == 'Midlatitude summer':
-            text.write('2' + "\n") #mid sum model
+            text.write('2' + "\n") # Mid sum model
         elif atmo_mod == 'Midlatitude winter':
-            text.write('3' + "\n") #mid win model
+            text.write('3' + "\n") # Mid win model
         elif atmo_mod == 'Subarctic summer':
-            text.write('4' + "\n") #sub sum model
+            text.write('4' + "\n") # Sub sum model
         elif atmo_mod == 'Subarctic winter':
-            text.write('5' + "\n") #sub win model
+            text.write('5' + "\n") # Sub win model
         elif atmo_mod == 'Us standard 62':
-            text.write('6' + "\n") #us 62 model
-        #Aerosol model
+            text.write('6' + "\n") # Us 62 model
+        # Aerosol model
         if aerosol_mod == 'No aerosols':
-            text.write('0' + "\n") #aerosol model
+            text.write('0' + "\n") # No aerosol model
         elif aerosol_mod == 'Continental model':
-            text.write('1' + "\n") #aerosol model
+            text.write('1' + "\n") # Continental aerosol model
         elif aerosol_mod == 'Maritime model':
-            text.write('2' + "\n") #aerosol model
+            text.write('2' + "\n") # Maritimw aerosol model
         elif aerosol_mod == 'Urban model':
-            text.write('3' + "\n") #aerosol model
+            text.write('3' + "\n") # Urban aerosol model
         elif aerosol_mod == 'Shettle model for background desert aerosol':
-            text.write('4' + "\n") #aerosol model
+            text.write('4' + "\n") # Shettle aerosol model
         elif aerosol_mod == 'Biomass burning':
-            text.write('5' + "\n") #aerosol model
+            text.write('5' + "\n") #Biomass aerosol model
         elif aerosol_mod == 'Stratospheric model':
-            text.write('6' + "\n") #aerosol model
-        #Visibility and/or AOD
+            text.write('6' + "\n") # Stratospheric aerosol model
+        # Visibility and/or AOD
         if not flags["a"] and vis != '':
             text.write('{}'.format(vis_mean) + "\n")
-            #if aot550 != '' and aod_value != '':
-                #gscript.warning(_("AOD input will be ignored"))
         elif flags["a"] and vis != '':
             if aot550 != 0:
-                text.write('0' + "\n") #visibility
-                text.write('{}'.format(aot550) + "\n") #AOD add script for reading aot from aeronet data
+                text.write('0' + "\n") # Visibility
+                text.write('{}'.format(aot550) + "\n")
             elif aot550 == 0:
-                text.write('-1' + "\n") #visibility
-                text.write('{}'.format(aot550) + "\n") #AOD add script for reading aot from aeronet data
+                text.write('-1' + "\n") # Visibility
+                text.write('{}'.format(aot550) + "\n")
         elif vis == '' and aot550 != 0:
-            text.write('0' + "\n") #visibility
-            text.write('{}'.format(aot550) + "\n") #AOD
+            text.write('0' + "\n") # Visibility
+            text.write('{}'.format(aot550) + "\n")
         elif vis == '' and aot550 == 0:
-            text.write('-1' + "\n") #visibility
-            text.write('{}'.format(aot550) + "\n") #AOD
+            text.write('-1' + "\n") # Visibility
+            text.write('{}'.format(aot550) + "\n")
         else:
-            gscript.fatal("Unable to retrieve visibility or AOD value, check the input")
-        text.write('{:.3f}'.format(dem_mean) + "\n") #mean elevation 
-        text.write('-1000' + "\n") #sensor height
-        #Band number
+            gscript.fatal('Unable to retrieve visibility or AOD value, \
+                check the input')
+        text.write('{:.3f}'.format(dem_mean) + "\n") # Mean elevation
+        text.write('-1000' + "\n") # Sensor height
+        # Band number
         b = bb.split('_')
         if check_ndir == 1:
             band_n = b[2]
@@ -571,82 +592,82 @@ def main ():
             band_n = b[10]
         if band_n == 'B01' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('166') #band
+            text.write('166')
         elif band_n == 'B02' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('167') #band
+            text.write('167')
         elif band_n == 'B03' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('168') #band
+            text.write('168')
         elif band_n == 'B04' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('169') #band
+            text.write('169')
         elif band_n == 'B05' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('170') #band
+            text.write('170')
         elif band_n == 'B06' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('171') #band
+            text.write('171')
         elif band_n == 'B07' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('172') #band
+            text.write('172')
         elif band_n == 'B08' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('173') #band
+            text.write('173')
         elif band_n == 'B8A' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('174') #band
+            text.write('174')
         elif band_n == 'B09' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('175') #band
+            text.write('175')
         elif band_n == 'B10' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('176') #band
+            text.write('176')
         elif band_n == 'B11' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('177') #band
+            text.write('177')
         elif band_n == 'B12' and sensor.text == 'Sentinel-2A':
             gscript.message(_(band_n))
-            text.write('178') #band
+            text.write('178')
         elif band_n == 'B01' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('179') #band
+            text.write('179')
         elif band_n == 'B02' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('180') #band
+            text.write('180')
         elif band_n == 'B03' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('181') #band
+            text.write('181')
         elif band_n == 'B04' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('182') #band
+            text.write('182')
         elif band_n == 'B05' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('183') #band
+            text.write('183')
         elif band_n == 'B06' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('184') #band
+            text.write('184')
         elif band_n == 'B07' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('185') #band
+            text.write('185')
         elif band_n == 'B08' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('186') #band
+            text.write('186')
         elif band_n == 'B8A' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('187') #band
+            text.write('187')
         elif band_n == 'B09' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('188') #band
+            text.write('188')
         elif band_n == 'B10' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('189') #band
+            text.write('189')
         elif band_n == 'B11' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('190') #band
+            text.write('190')
         elif band_n == 'B12' and sensor.text == 'Sentinel-2B':
             gscript.message(_(band_n))
-            text.write('191') #band
+            text.write('191')
         else:
             gscript.fatal('Bands do not seem to belong to a Sentinel image')
     	text.close()
@@ -678,7 +699,13 @@ def main ():
     if flags["t"]:
         txt = open(txt_file, "w")
         for key, value in cor_bands.items():
-            if str(key) in ['blue', 'green', 'red', 'nir', 'nir8a', 'swir11', 'swir12' ]:
+            if str(key) in ['blue',
+                'green',
+                'red',
+                'nir',
+                'nir8a',
+                'swir11',
+                'swir12']:
                 txt.write(str(key) + '=' + str(value) + "\n")
         txt.close()
 
@@ -690,10 +717,10 @@ def main ():
             flags='e')
 
     gscript.del_temp_region()
-    gscript.message(_('--- The computational region has been reset to the previous one ---'))
+    gscript.message(_('--- The computational region has been reset \
+        to the previous one ---'))
 
 if __name__ == "__main__":
     options, flags = gscript.parser()
-    #atexit.register(cleanup)
     main()
 
