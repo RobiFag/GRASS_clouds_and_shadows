@@ -219,7 +219,7 @@ def main ():
             granule = g_list.find('Granule')
             images = granule.find('IMAGE_FILE')
             img_name = images.text.split('/')
-            # Check if if input exist and if the mtd file corresponds with the input image
+            # Check if input exist and if the mtd file corresponds with the input image
             for img in root.iter('IMAGE_FILE'):
                 a = img.text.split('/')
                 b = a[3].split('_')
@@ -274,7 +274,7 @@ def main ():
             g_list = product.find('Granule_List')
             granule = g_list.find('Granules')
             images = granule.find('IMAGE_ID')
-            # Check if if input exist and if the mtd file corresponds with the input image
+            # Check if input exist and if the mtd file corresponds with the input image
             for img in root.iter('IMAGE_ID'):
                 b = img.text.split('_')
                 if gscript.find_file(img.text,
