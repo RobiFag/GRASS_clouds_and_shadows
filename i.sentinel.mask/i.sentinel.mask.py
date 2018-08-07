@@ -211,7 +211,7 @@ def main ():
     # Input file
     mtd_file = options['mtd_file']
     bands = {} 
-    if options['input_file']=='':
+    if options['input_file'] == '':
         bands['blue'] = options['blue']
         bands['green'] = options['green']
         bands['red'] = options['red']
@@ -220,6 +220,7 @@ def main ():
         bands['swir11'] = options['swir11']
         bands['swir12'] = options['swir12']
     else:
+        txt_bands = []
         input_file = options['input_file']
         for line in file(input_file):
             a = line.split('=')
@@ -231,8 +232,13 @@ def main ():
                 'swir11',
                 'swir12' ]:
                 gscript.fatal('Syntax error in the txt file. See the manual for further information about the right syntax.')
+            else:
+                txt_bands.append(a[0])
             a[1] = a[1].strip()
             bands[a[0]] = a[1]
+        if len(txt_bands) < 7:
+            gscript.fatal(('One or more bands are missing in the input text file.\n Only these bands have been found: {}').format(txt_bands))
+
     d = 'double'
     f_bands = {}
     scale_fac = options['scale_fac']
