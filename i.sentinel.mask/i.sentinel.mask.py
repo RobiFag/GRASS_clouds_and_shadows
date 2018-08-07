@@ -242,6 +242,7 @@ def main ():
     cloud_mask = options['cloud_mask']
     shadow_mask = options['shadow_mask']
 
+    # Check if all required input bands are specified in the text file
     if (bands['blue'] == '' or
         bands['green'] == '' or
         bands['red'] == '' or
@@ -251,12 +252,14 @@ def main ():
         bands['swir12'] == ''):
         gscript.fatal('All input bands (blue, green, red, nir, nir8a, swir11, swir12) are required')
 
+    # Check if input bands exist
     for key, value in bands.items():
         if not gscript.find_file(value,
             element = 'cell',
             mapset = mapset)['file']:
             gscript.fatal(('Raster map <{}> not found.').format(value))
 
+    # Check input and output for shadow mask
     if not flags["c"]:
         if options['mtd_file']== '':
             gscript.fatal('Metadata file is required for shadow mask computation. Please specified it')
@@ -458,7 +461,7 @@ def main ():
         # Shift cloud mask using dE e dN
         # Start reading mean sun zenith and azimuth from xml file to compute 
         #dE and dN automatically
-        gscript.message(_('--- Reading mean sun zenith and azimuth from MTD_TL.xml file to compute clouds shift ---'))
+        gscript.message(_('--- Reading mean sun zenith and azimuth from metadata file to compute clouds shift ---'))
         xml_tree = et.parse(mtd_file)
         root = xml_tree.getroot()
         ZA = []
@@ -547,7 +550,8 @@ def main ():
         gscript.message(_('--- the estimated east shift is: {:.2f} m ---'.format(dE[index_maxAA])))
         gscript.message(_('--- the estimated north shift is: {:.2f} m ---'.format(dN[index_maxAA])))
     else:
-        gscript.warning(_('No shadow mask will be computed'))
+        if shadow_mask != '':
+            gscript.warning(_('No shadow mask will be computed'))
 
 def cleanup():
     if flags["r"]:
