@@ -166,12 +166,10 @@ def main ():
         check_ndir = 1
         mtd_file = options['input_dir'] + '/MTD_MSIL1C.xml'
     else:
-        gscript.fatal('The input directory does not belong to a \
-            L1C Sentinel image. Please check the input directory')
+        gscript.fatal('The input directory does not belong to a L1C Sentinel image. Please check the input directory')
     # Check if Metadata file exists
     if not os.path.isfile(mtd_file):
-        gscript.fatal('Metadata file not found. \
-            Please check the input directory')
+        gscript.fatal('Metadata file not found. Please check the input directory')
     atmo_mod = options['atmospheric_model']
     aerosol_mod = options['aerosol_model']
     aeronet_file = options['aeronet_file']
@@ -195,8 +193,7 @@ def main ():
                 gscript.run_command('i.sentinel.import',
                     input=options['input_dir'])
         except:
-            gscript.fatal('Module rquire i.sentinel.import.\
-                Please install it using g.extension.')
+            gscript.fatal('Module rquire i.sentinel.import. Please install it using g.extension.')
 
     # Create xml "tree" for reading parameters from metadata
     tree = et.parse(mtd_file)
@@ -222,43 +219,41 @@ def main ():
             granule = g_list.find('Granule')
             images = granule.find('IMAGE_FILE')
             img_name = images.text.split('/')
-            # Check if the mtd file corresponds with the input image
-            if gscript.find_file(img_name[3],
-                element = 'cell',
-                mapset = mapset)['file']:
-                    for img in root.iter('IMAGE_FILE'):
-                        a = img.text.split('/')
-                        b = a[3].split('_')
-                        if b[2] == 'B01':
-                            bands['costal'] = a[3]
-                        elif b[2] == 'B02':
-                            bands['blue'] = a[3]
-                        elif b[2] == 'B03':
-                            bands['green'] = a[3]
-                        elif b[2] == 'B04':
-                            bands['red'] = a[3]
-                        elif b[2] == 'B05':
-                            bands['re5'] = a[3]
-                        elif b[2] == 'B06':
-                            bands['re6'] = a[3]
-                        elif b[2] == 'B07':
-                            bands['re7'] = a[3]
-                        elif b[2] == 'B08':
-                            bands['nir'] = a[3]
-                        elif b[2] == 'B8A':
-                            bands['nir8a'] = a[3]
-                        elif b[2] == 'B09':
-                            bands['vapour'] = a[3]
-                        elif b[2] == 'B10':
-                            bands['cirrus'] = a[3]
-                        elif b[2] == 'B11':
-                            bands['swir11'] = a[3]
-                        elif b[2] == 'B12':
-                            bands['swir12'] = a[3]
-            else:
-                gscript.fatal(('The metadata file seems to belong to an \
-                    unexpected image ({}).\n Check the input directory or \
-                    import the corresponding bands').format(
+            # Check if if input exist and if the mtd file corresponds with the input image
+            for img in root.iter('IMAGE_FILE'):
+                a = img.text.split('/')
+                b = a[3].split('_')
+                if gscript.find_file(a[3],
+                    element = 'cell',
+                    mapset = mapset)['file'] or b[2] == 'TCI':
+                    if b[2] == 'B01':
+                        bands['costal'] = a[3]
+                    elif b[2] == 'B02':
+                        bands['blue'] = a[3]
+                    elif b[2] == 'B03':
+                        bands['green'] = a[3]
+                    elif b[2] == 'B04':
+                        bands['red'] = a[3]
+                    elif b[2] == 'B05':
+                        bands['re5'] = a[3]
+                    elif b[2] == 'B06':
+                        bands['re6'] = a[3]
+                    elif b[2] == 'B07':
+                        bands['re7'] = a[3]
+                    elif b[2] == 'B08':
+                        bands['nir'] = a[3]
+                    elif b[2] == 'B8A':
+                        bands['nir8a'] = a[3]
+                    elif b[2] == 'B09':
+                        bands['vapour'] = a[3]
+                    elif b[2] == 'B10':
+                        bands['cirrus'] = a[3]
+                    elif b[2] == 'B11':
+                        bands['swir11'] = a[3]
+                    elif b[2] == 'B12':
+                        bands['swir12'] = a[3]
+                else:
+                    gscript.fatal(("One or more input bands are missing or \n the metadata file belongs to another image ({}).").format(
                         img_name[3].replace('_B01','')))
 
     if check_odir == 1:
@@ -279,12 +274,12 @@ def main ():
             g_list = product.find('Granule_List')
             granule = g_list.find('Granules')
             images = granule.find('IMAGE_ID')
-            # Check if the mtd file corresponds with the input image
-            if gscript.find_file(images.text,
-                element = 'cell',
-                mapset = mapset)['file']:
-                for img in root.iter('IMAGE_ID'):
-                    b = img.text.split('_')
+            # Check if if input exist and if the mtd file corresponds with the input image
+            for img in root.iter('IMAGE_ID'):
+                b = img.text.split('_')
+                if gscript.find_file(img.text,
+                    element = 'cell',
+                    mapset = mapset)['file']:
                     if b[10] == 'B01':
                         bands['costal'] = img.text
                     elif b[10] == 'B02':
@@ -311,10 +306,8 @@ def main ():
                         bands['swir11'] = img.text
                     elif b[10] == 'B12':
                         bands['swir12'] = img.text
-            else:
-                gscript.fatal(('The metadata file seems to belong to an \
-                    unexpected image ({}).\n Check the input directory or \
-                    import the corresponding bands').format(
+                else:
+                    gscript.fatal(("One or more input bands are missing or \n the metadata file belongs to another image ({}).").format(
                         images.text.replace('_B09','')))
 
     # Check if input exist
@@ -336,26 +329,23 @@ def main ():
     # Check if output name for the text file has been specified
     if flags["t"]:
         if options['text_file'] == '':
-            gscript.fatal('Output name is required for the text file. \
-                Please specified it')
+            gscript.fatal('Output name is required for the text file. Please specified it')
 
     # Set temp region to image max extent
     gscript.use_temp_region()
     gscript.run_command('g.region',
         rast=bands.values(),
         flags='a')
-    gscript.message(_("--- The computational region has been temporarily set \
-        to image max extent ---"))
+    gscript.message(_("--- The computational region has been temporarily set to image max extent ---"))
 
     if flags["a"]:
         if vis!='':
             if options['aod_value']!='' and aeronet_file!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
-                gscript.fatal('Only one parameter must be provided, \
-                    AOD value or AERONET file')
+                gscript.fatal('Only one parameter must be provided, AOD value or AERONET file')
             elif options['aod_value']=='' and aeronet_file=='':
-                gscript.fatal('If -a flag is checked an AOD value or \
-                    AERONET file must be provided')
+                gscript.warning(_('--- Visibility map will be ignored ---'))
+                gscript.fatal('If -a flag is checked an AOD value or AERONET file must be provided')
             elif options['aod_value']!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
                 check_value = 1
@@ -363,16 +353,14 @@ def main ():
             elif aeronet_file!='':
                 gscript.warning(_('--- Visibility map will be ignored ---'))
         elif options['aod_value']!='' and aeronet_file!='':
-            gscript.fatal('Only one parameter must be provided, AOD value or \
-                AERONET file')
+            gscript.fatal('Only one parameter must be provided, AOD value or AERONET file')
         elif options['aod_value']!='':
             check_value = 1
             aot550 = options['aod_value']
         elif aeronet_file!='':
             gscript.message(_('--- Computing AOD from input AERONET file ---'))
         elif options['aod_value']=='' and aeronet_file=='':
-            gscript.fatal('If -a flag is checked an AOD value or \
-                AERONET file must be provided')
+            gscript.fatal('If -a flag is checked an AOD value or AERONET file must be provided')
     else:
         if vis!='':
             if options['aod_value']!='' or aeronet_file!='':
@@ -380,8 +368,7 @@ def main ():
             check_file = 1
             stats_v = gscript.parse_command('r.univar', flags='g', map=vis)
             vis_mean = int(float(stats_v['mean']))
-            gscript.message(_('--- Computed visibility mean value: \
-                {} Km ---'.format(vis_mean)))
+            gscript.message(_('--- Computed visibility mean value: {} Km ---'.format(vis_mean)))
         elif vis=='' and (options['aod_value']!='' or aeronet_file!=''):
             gscript.fatal('Check the -a flag to use AOD instead of visibility')
         else:
@@ -440,10 +427,8 @@ def main ():
             wl.append(int(l[1]))
 
         aot_req = 550
-        upper = min([ i for i in wl if i >= aot_req],
-            key=lambda x:abs(x-aot_req))
-        lower = min([ i for i in wl if i < aot_req],
-            key=lambda x:abs(x-aot_req))
+        upper = min([ i for i in wl if i >= aot_req], key=lambda x:abs(x-aot_req))
+        lower = min([ i for i in wl if i < aot_req], key=lambda x:abs(x-aot_req))
 
         count=0
         for row in file(aeronet_file):
@@ -457,8 +442,7 @@ def main ():
                     # Search for the not null value for the upper wavelength
                     if t_columns[wl.index(upper)+i_col[0]]=="N/A":
                         aot_req_tmp = upper
-                        upper = min([ i for i in wl if i > aot_req_tmp],
-                            key=lambda x:abs(x-aot_req_tmp))
+                        upper = min([ i for i in wl if i > aot_req_tmp], key=lambda x:abs(x-aot_req_tmp))
                     else:
                         wl_upper = float(upper)
                         aot_upper = float(t_columns[wl.index(upper)+i_col[0]])
@@ -469,8 +453,7 @@ def main ():
                     # Search for the not null value for the lower wavelength
                     if t_columns[wl.index(lower)+i_col[0]]=="N/A":
                         aot_req_tmp = lower
-                        lower = min([ i for i in wl if i < aot_req_tmp],
-                            key=lambda x:abs(x-aot_req_tmp))
+                        lower = min([ i for i in wl if i < aot_req_tmp], key=lambda x:abs(x-aot_req_tmp))
                     else:
                         wl_lower = float(lower)
                         aot_lower = float(t_columns[wl.index(lower)+i_col[0]])
@@ -486,8 +469,7 @@ def main ():
     mean = (float(stats_d['mean']))
     conv_fac = -0.001
     dem_mean = mean * conv_fac
-    gscript.message(_('--- Computed mean target elevation above sea level: \
-        {:.3f} m ---'.format(mean)))
+    gscript.message(_('--- Computed mean target elevation above sea level: {:.3f} m ---'.format(mean)))
 
     # Start compiling the control file
     for key, bb in bands.items():
@@ -580,8 +562,7 @@ def main ():
             text.write('-1' + "\n") # Visibility
             text.write('{}'.format(aot550) + "\n")
         else:
-            gscript.fatal('Unable to retrieve visibility or AOD value, \
-                check the input')
+            gscript.fatal('Unable to retrieve visibility or AOD value, check the input')
         text.write('{:.3f}'.format(dem_mean) + "\n") # Mean elevation
         text.write('-1000' + "\n") # Sensor height
         # Band number
@@ -717,8 +698,7 @@ def main ():
             flags='e')
 
     gscript.del_temp_region()
-    gscript.message(_('--- The computational region has been reset \
-        to the previous one ---'))
+    gscript.message(_('--- The computational region has been reset to the previous one ---'))
 
 if __name__ == "__main__":
     options, flags = gscript.parser()
