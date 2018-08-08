@@ -38,7 +38,7 @@ NOTE: the starting idea was to create a single module which wrapped all the func
 <li> Implement other existing algorithm of clouds and shadows detection
 </ul>
 NOTE: This was one of the possible goals of the GSoC project but the coding of some parts of the two addons required more time than expected.
-</b></b>
+<br><br>
 <b> i.sentinel.preproc </b>
 <ul>
 <li> Implement download functionality avoiding dependencies
