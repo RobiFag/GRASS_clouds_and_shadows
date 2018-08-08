@@ -38,15 +38,18 @@ NOTE: the starting idea was to create a single module which wrapped all the func
 <li> Implement other existing algorithm of clouds and shadows detection
 </ul>
 NOTE: This was one of the possible goals of the GSoC project but the coding of some parts of the two addons required more time than expected.
-
+</b></b>
 <b> i.sentinel.preproc </b>
 <ul>
 <li> Implement download functionality avoiding dependencies
 <li> Integrate the Topographic Correction
 </ul>
 
-### Important Note
-This pubblic repository was created specifically for the development of the GSoC 2018 project "GRASS GIS module for Sentinel-2 cloud and shadow detection" and it will obviously remain active but the development of the modules will be maintained on the GRASS GIS SVN repository in the future.
+### Important Notes
+<ul>
+<li>This pubblic repository was created specifically for the development of the GSoC 2018 project "GRASS GIS module for Sentinel-2 cloud and shadow detection" and it will obviously remain active but the development of the modules will be maintained on the GRASS GIS SVN repository in the future.
 Anyone who wants to contribute to the development of these two modules is invited to do it on the GRASS GIS SVN repository.
-
+<li>All the file concerning i.sentinel.mask and i.sentinel.preproc have been moved to two specific subfolder in this GitHub repository.
+If you want to install i.sentinel.mask and/or i.sentinel.preproc you have to use the the official GRASS GIS SVN repository because g.extension for GitHub repository download currently support only module (Makefile) at the top level.
+</ul>
 
