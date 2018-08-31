@@ -11,7 +11,7 @@ More information about the algorithm and the module can be found <a href="https:
 i.sentinel.mask is a real complete GRASS GIS addon module (with GUI and manual page) and it is now available on the official <a href="https://trac.osgeo.org/grass/browser/grass-addons/grass7/imagery/i.sentinel.mask" target="_blank">GRASS GIS SVN repository</a>.<br>
 It can be easily installed within GRASS GIS using the module g.extension:
 
-<em>g.extension extension=i.sentinel.mask operation=add</em>
+<em>g.extension extension=i.sentinel operation=add</em>
 
 <b>The resulting clouds and shadows maps obtained running i.sentinel.mask.</b>
 ![i_sentinel_mask_ES](i.sentinel.mask/i_sentinel_mask_ES.png)
@@ -28,7 +28,7 @@ More information about the module can be found <a href="https://grass.osgeo.org/
 i.sentinel.preproc is a real complete GRASS GIS addon module (with GUI and manual page) and it is now available on the official <a href="https://trac.osgeo.org/grass/browser/grass-addons/grass7/imagery/i.sentinel.preproc" target="_blank">GRASS GIS SVN repository</a>.<br>
 It can be easily installed within GRASS GIS using the module g.extension:
 
-<em>g.extension extension=i.sentinel.preproc operation=add </em>
+<em>g.extension extension=i.sentinel operation=add </em>
 
 NOTE: the starting idea was to create a single module which wrapped all the functionalities provided by i.sentinel.mask and i.sentinel.preproc but, following the suggestions of the dev community, it was decided to develop two different modules.
 
