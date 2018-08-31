@@ -8,7 +8,7 @@ The project creates a specific module for GRASS GIS application (<b>i.sentinel.m
 
 More information about the algorithm and the module can be found <a href="https://grass.osgeo.org/grass74/manuals/addons/i.sentinel.mask.html" target="_blank">HERE</a>.
 
-i.sentinel.mask is a real complete GRASS GIS addon module (with GUI and manual page) and it is now available on the official <a href="https://trac.osgeo.org/grass/browser/grass-addons/grass7/imagery/i.sentinel.mask" target="_blank">GRASS GIS SVN repository</a>.<br>
+i.sentinel.mask is a real complete GRASS GIS addon module (with GUI and manual page) and it is now available on the official <a href="https://trac.osgeo.org/grass/browser/grass-addons/grass7/imagery/i.sentinel/i.sentinel.mask" target="_blank">GRASS GIS SVN repository</a>.<br>
 It can be easily installed within GRASS GIS using the module g.extension:
 
 <em>g.extension extension=i.sentinel operation=add</em>
@@ -25,7 +25,7 @@ The aim is to provide a simplified module which allows importing images and perf
 
 More information about the module can be found <a href="https://grass.osgeo.org/grass74/manuals/addons/i.sentinel.preproc.html" target="_blank">HERE</a>.
 
-i.sentinel.preproc is a real complete GRASS GIS addon module (with GUI and manual page) and it is now available on the official <a href="https://trac.osgeo.org/grass/browser/grass-addons/grass7/imagery/i.sentinel.preproc" target="_blank">GRASS GIS SVN repository</a>.<br>
+i.sentinel.preproc is a real complete GRASS GIS addon module (with GUI and manual page) and it is now available on the official <a href="https://trac.osgeo.org/grass/browser/grass-addons/grass7/imagery/i.sentinel/i.sentinel.preproc" target="_blank">GRASS GIS SVN repository</a>.<br>
 It can be easily installed within GRASS GIS using the module g.extension:
 
 <em>g.extension extension=i.sentinel operation=add </em>
